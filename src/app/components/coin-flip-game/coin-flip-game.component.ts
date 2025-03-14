@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -9,6 +9,10 @@ import { PaymentPageComponent } from '../payment/payment-page.component';
 import { HeaderComponent } from '../header/header.component';
 import { GameHistory } from '../../models/game-history.model';
 import { AuthService } from '../../services/auth.service';
+import { GameService } from '../../services/game.service';
+import { User } from '../../models/user.model';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-coin-flip-game',
@@ -135,9 +139,12 @@ import { AuthService } from '../../services/auth.service';
                   </div>
 
                   <div class="bg-black/50 backdrop-blur-lg rounded-xl p-4 sm:p-6 border border-blue-500/30 shadow-neon-blue">
-                    <div class="flex items-center gap-2 text-blue-300 mb-4">
-                      <lucide-icon name="history" [size]="16"></lucide-icon>
-                      <span class="neon-text">Game History</span>
+                    <div class="flex items-center justify-between text-blue-300 mb-4">
+                      <div class="flex items-center gap-2">
+                        <lucide-icon name="history" [size]="16"></lucide-icon>
+                        <span class="neon-text">Recent Games</span>
+                      </div>
+                      <span class="text-xs text-blue-300/70">Last 10 games</span>
                     </div>
                     <p *ngIf="history.length === 0" class="text-white/50 text-center py-4">No games played yet</p>
                     <div *ngIf="history.length > 0" class="overflow-x-auto -mx-4 sm:mx-0">
@@ -163,7 +170,7 @@ import { AuthService } from '../../services/auth.service';
                               <td class="capitalize">{{ h.choice }}</td>
                               <td class="capitalize">{{ h.outcome }}</td>
                               <td class="text-right font-medium">
-                                {{ h.won ? '+' : '-' }}₹{{ h.bet.toLocaleString() }}
+                                {{ h.won ? '+' : '-' }}₹{{ h.won ? h.winAmount.toLocaleString() : h.bet.toLocaleString() }}
                               </td>
                             </tr>
                           </tbody>
@@ -202,28 +209,116 @@ export class CoinFlipGameComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private gameService: GameService,
+    private router: Router,
+    private http: HttpClient,
+    private ngZone: NgZone
   ) {}
   
   ngOnInit(): void {
+    // First get user from local storage
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
       this.router.navigate(['/login']);
       return;
     }
     
+    // Set initial values from localStorage
     this.username = currentUser.username;
-    this.balance = currentUser.balance;
+    this.balance = currentUser.balance ?? 0;
+    
+    // Then refresh from the backend to get the latest data
+    this.authService.refreshCurrentUser().subscribe({
+      next: (user) => {
+        if (user) {
+          console.log('User data refreshed from backend:', user);
+          this.username = user.username;
+          this.balance = user.balance ?? 0;
+        }
+      },
+      error: (error) => {
+        console.error('Failed to refresh user data:', error);
+        // Continue with existing data from localStorage
+      }
+    });
+    
+    // Load game history
+    this.loadGameHistory();
+  }
+  
+  loadGameHistory(): void {
+    console.log('CoinFlipGameComponent - Loading game history');
+    
+    // Check authentication status first
+    if (!this.authService.isLoggedIn()) {
+      console.error('User is not logged in, cannot load history');
+      return;
+    }
+
+    // Add a loader or placeholder if needed
+    this.history = [];
+    
+    this.gameService.getGameHistory().subscribe({
+      next: (history) => {
+        console.log('History loaded successfully, items:', history?.length || 0);
+        
+        if (Array.isArray(history)) {
+          // Ensure all timestamps are properly converted to Date objects
+          let processedHistory = history.map(item => {
+            // Handle potential timestamp format issues
+            if (item.timestamp && !(item.timestamp instanceof Date)) {
+              return {
+                ...item,
+                timestamp: new Date(item.timestamp)
+              };
+            }
+            return item;
+          });
+          
+          // Sort history by timestamp (newest first)
+          processedHistory.sort((a, b) => {
+            const dateA = a.timestamp instanceof Date ? a.timestamp : new Date(a.timestamp);
+            const dateB = b.timestamp instanceof Date ? b.timestamp : new Date(b.timestamp);
+            return dateB.getTime() - dateA.getTime();
+          });
+          
+          // Only show the 10 most recent games
+          this.history = processedHistory.slice(0, 10);
+        } else {
+          console.error('History data is not an array:', history);
+          this.history = [];
+        }
+      },
+      error: (error) => {
+        console.error('Failed to load game history:', error);
+        
+        // If token is invalid, try refreshing user session
+        if (error.message === 'Session expired. Please log in again.') {
+          this.authService.refreshCurrentUser().subscribe({
+            next: (user) => {
+              if (user) {
+                // Try loading history again after refreshing user
+                this.loadGameHistory();
+              } else {
+                this.router.navigate(['/login']);
+              }
+            },
+            error: () => this.router.navigate(['/login'])
+          });
+        }
+      }
+    });
   }
 
   formatDateTime(date: Date): string {
+    if (!date) return '';
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
       hour12: true
-    }).format(date);
+    }).format(new Date(date));
   }
 
   setBet(amount: number): void {
@@ -244,38 +339,57 @@ export class CoinFlipGameComponent implements OnInit {
     this.latestWin = null;
     this.latestLoss = null;
     
-    setTimeout(() => {
-      const outcome = Math.random() < 0.5 ? 'heads' : 'tails';
-      this.result = outcome;
-      const won = selectedChoice === outcome;
-      const winAmount = won ? this.bet : -this.bet;
-      this.balance += winAmount;
-      
-      // Update user balance in auth service
-      this.authService.updateUserBalance(winAmount);
-      
-      this.history = [
-        { 
-          gameType: this.gameType,
-          choice: selectedChoice, 
-          outcome, 
-          won, 
-          bet: this.bet, 
-          winAmount,
-          timestamp: new Date()
-        },
-        ...this.history.slice(0, 9)
-      ];
-      
-      if (won) {
-        this.latestWin = this.bet;
-        this.latestLoss = null;
-      } else {
-        this.latestLoss = this.bet;
-        this.latestWin = null;
+    // Deduct bet amount from balance immediately for UI feedback
+    this.balance -= this.bet;
+    
+    // Call the game service to play the game
+    this.gameService.playGame(this.bet, selectedChoice).subscribe({
+      next: (gameResult) => {
+        console.log('Game API call succeeded:', gameResult);
+        // Wait for animation to complete
+        setTimeout(() => {
+          this.result = gameResult.outcome;
+          
+          if (gameResult.won) {
+            this.latestWin = gameResult.winAmount;
+            // Update balance with winnings
+            this.balance += gameResult.winAmount;
+          } else {
+            this.latestLoss = this.bet;
+            // Balance already deducted
+          }
+          
+          // Update user in auth service
+          const currentUser = this.authService.getCurrentUser();
+          if (currentUser) {
+            const updatedUser: User = {
+              username: currentUser.username,
+              balance: this.balance,
+              role: currentUser.role,
+              id: currentUser.id,
+              createdAt: currentUser.createdAt
+            };
+            this.authService.updateCurrentUser(updatedUser);
+          }
+          
+          // Add new game to history and maintain the 10 item limit
+          this.history.unshift(gameResult);
+          if (this.history.length > 10) {
+            this.history = this.history.slice(0, 10);
+          }
+          
+          // Reset flipping state
+          setTimeout(() => {
+            this.isFlipping = false;
+          }, 500);
+        }, 2000); // Match the animation duration
+      },
+      error: (error) => {
+        console.error('Game API call failed:', error);
+        // Refund bet amount on error
+        this.balance += this.bet;
+        this.isFlipping = false;
       }
-      
-      this.isFlipping = false;
-    }, 2000);
+    });
   }
 }

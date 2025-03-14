@@ -3,16 +3,21 @@ package com.casino.coinflip.service;
 import com.casino.coinflip.entity.WithdrawalRequest;
 import com.casino.coinflip.entity.User;
 import com.casino.coinflip.repository.WithdrawalRequestRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class WithdrawalService {
     private final WithdrawalRequestRepository withdrawalRequestRepository;
     private final UserService userService;
+    
+    // Constructor
+    public WithdrawalService(WithdrawalRequestRepository withdrawalRequestRepository, UserService userService) {
+        this.withdrawalRequestRepository = withdrawalRequestRepository;
+        this.userService = userService;
+    }
 
     @Transactional
     public WithdrawalRequest createWithdrawalRequest(User user, BigDecimal amount, 
@@ -59,5 +64,9 @@ public class WithdrawalService {
 
         request.setStatus(WithdrawalRequest.WithdrawalStatus.REJECTED);
         withdrawalRequestRepository.save(request);
+    }
+
+    public List<WithdrawalRequest> getWithdrawalHistory(Long userId) {
+        return withdrawalRequestRepository.findByUserIdOrderByTimestampDesc(userId);
     }
 }

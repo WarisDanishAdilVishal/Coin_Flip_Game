@@ -3,15 +3,18 @@ package com.casino.coinflip.service;
 import com.casino.coinflip.entity.Transaction;
 import com.casino.coinflip.entity.User;
 import com.casino.coinflip.repository.TransactionRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 
 @Service
-@RequiredArgsConstructor
 public class TransactionService {
     private final TransactionRepository transactionRepository;
+    
+    // Constructor
+    public TransactionService(TransactionRepository transactionRepository) {
+        this.transactionRepository = transactionRepository;
+    }
 
     @Transactional
     public Transaction createGameTransaction(User user, BigDecimal amount, boolean won) {

@@ -4,19 +4,24 @@ import com.casino.coinflip.entity.User;
 import com.casino.coinflip.repository.GameRepository;
 import com.casino.coinflip.service.UserService;
 import com.casino.coinflip.service.WithdrawalService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping("/admin")
 @PreAuthorize("hasRole('ADMIN')")
-@RequiredArgsConstructor
 public class AdminController {
     private final GameRepository gameRepository;
     private final UserService userService;
     private final WithdrawalService withdrawalService;
+    
+    // Constructor
+    public AdminController(GameRepository gameRepository, UserService userService, WithdrawalService withdrawalService) {
+        this.gameRepository = gameRepository;
+        this.userService = userService;
+        this.withdrawalService = withdrawalService;
+    }
 
     @GetMapping("/stats")
     public ResponseEntity<?> getGameStats() {

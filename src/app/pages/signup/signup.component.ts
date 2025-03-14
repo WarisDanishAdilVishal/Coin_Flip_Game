@@ -77,11 +77,12 @@ import { AuthService } from '../../services/auth.service';
           
           <app-button 
             (onClick)="signup()"
-            [disabled]="!username.trim() || !password.trim() || !confirmPassword.trim()"
+            [disabled]="!username.trim() || !password.trim() || !confirmPassword.trim() || isLoading"
             className="mt-6 w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white p-3 rounded-md font-medium disabled:opacity-50 shadow-neon"
           >
             <lucide-icon name="user-plus" [size]="18" class="mr-2"></lucide-icon>
-            Create Account
+            <span *ngIf="isLoading">Creating account...</span>
+            <span *ngIf="!isLoading">Create Account</span>
           </app-button>
           
           <div class="text-center text-pink-300 text-sm">
@@ -98,6 +99,7 @@ export class SignupComponent {
   password: string = '';
   confirmPassword: string = '';
   errorMessage: string = '';
+  isLoading: boolean = false;
   
   constructor(
     private authService: AuthService,
@@ -105,7 +107,7 @@ export class SignupComponent {
   ) {}
   
   signup(): void {
-    if (!this.username.trim() || !this.password.trim() || !this.confirmPassword.trim()) {
+    if (!this.username.trim() || !this.password.trim() || !this.confirmPassword.trim() || this.isLoading) {
       return;
     }
     
@@ -119,14 +121,20 @@ export class SignupComponent {
       return;
     }
     
-    const success = this.authService.register(this.username, this.password);
+    this.isLoading = true;
+    this.errorMessage = '';
     
-    if (success) {
-      // Auto login after successful registration
-      this.authService.login(this.username, this.password);
-      this.router.navigate(['/game']);
-    } else {
-      this.errorMessage = 'Username already exists';
-    }
+    this.authService.register(this.username, this.password).subscribe({
+      next: () => {
+        this.router.navigate(['/game']);
+      },
+      error: (error) => {
+        this.errorMessage = error.message || 'Registration failed. Please try again.';
+        this.isLoading = false;
+      },
+      complete: () => {
+        this.isLoading = false;
+      }
+    });
   }
 }

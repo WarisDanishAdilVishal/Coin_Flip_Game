@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: coin-flip-backend
+    env: docker
+    region: your-preferred-region
+    buildCommand: ./mvnw clean package -DskipTests
+    startCommand: java -jar target/coin-flip-casino-0.0.1-SNAPSHOT.jar
+    healthCheckPath: /api/health
+    envVars:
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: JPA_DDL_AUTO
+        value: validate
+      - key: SHOW_SQL
+        value: false
+      - key: FORMAT_SQL
+        value: false
+      - key: SQL_INIT_MODE
+        value: never
+      - key: PORT
+        value: 8080
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRATION
+        value: 30000
+      - key: JWT_REFRESH_EXPIRATION
+        value: 60000
+      - key: FRONTEND_URL
+        sync: false 

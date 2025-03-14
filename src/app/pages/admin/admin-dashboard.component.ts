@@ -527,29 +527,37 @@ export class AdminDashboardComponent implements OnInit {
   }
   
   loadGameStats(): void {
-    this.gameStats = this.adminService.getGameStats();
-    
-    // Calculate totals
-    this.totalGames = this.gameStats.reduce((sum, stat) => sum + stat.gamesPlayed, 0);
-    this.totalWagered = this.gameStats.reduce((sum, stat) => sum + stat.totalWagered, 0);
-    this.totalWon = this.gameStats.reduce((sum, stat) => sum + stat.totalWon, 0);
-    this.totalProfit = this.totalWagered - this.totalWon;
+    this.adminService.getGameStats().subscribe(stats => {
+      this.gameStats = stats;
+      
+      // Calculate totals
+      this.totalGames = this.gameStats.reduce((sum, stat) => sum + stat.gamesPlayed, 0);
+      this.totalWagered = this.gameStats.reduce((sum, stat) => sum + stat.totalWagered, 0);
+      this.totalWon = this.gameStats.reduce((sum, stat) => sum + stat.totalWon, 0);
+      this.totalProfit = this.totalWagered - this.totalWon;
+    });
   }
   
   loadTransactions(): void {
-    this.transactions = this.adminService.getTransactions();
-    this.filterTransactions();
+    this.adminService.getTransactions().subscribe(transactions => {
+      this.transactions = transactions;
+      this.filterTransactions();
+    });
   }
   
   loadWithdrawals(): void {
-    this.withdrawalRequests = this.adminService.getWithdrawalRequests();
-    this.filterWithdrawals();
-    this.pendingWithdrawals = this.withdrawalRequests.filter(w => w.status === 'pending');
+    this.adminService.getWithdrawalRequests().subscribe(requests => {
+      this.withdrawalRequests = requests;
+      this.filterWithdrawals();
+      this.pendingWithdrawals = this.withdrawalRequests.filter(w => w.status === 'pending');
+    });
   }
   
   loadUsers(): void {
-    this.users = this.adminService.getUsers();
-    this.filterUsers();
+    this.adminService.getUsers().subscribe(users => {
+      this.users = users;
+      this.filterUsers();
+    });
   }
   
   filterTransactions(): void {

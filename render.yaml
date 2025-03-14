@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: coin-flip-frontend
+    env: static
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist/angular-coin-flip/browser
+    envVars:
+      - key: BACKEND_URL
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html 

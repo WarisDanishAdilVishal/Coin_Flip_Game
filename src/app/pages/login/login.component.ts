@@ -62,10 +62,11 @@ import { AuthService } from '../../services/auth.service';
           
           <app-button 
             (onClick)="login()"
-            [disabled]="!username.trim() || !password.trim()"
+            [disabled]="!username.trim() || !password.trim() || isLoading"
             className="mt-6 w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white p-3 rounded-md font-medium disabled:opacity-50 shadow-neon"
           >
-            Login
+            <span *ngIf="isLoading">Logging in...</span>
+            <span *ngIf="!isLoading">Login</span>
           </app-button>
           
           <div class="text-center text-pink-300 text-sm">
@@ -81,6 +82,7 @@ export class LoginComponent {
   username: string = '';
   password: string = '';
   errorMessage: string = '';
+  isLoading: boolean = false;
   
   constructor(
     private authService: AuthService,
@@ -88,16 +90,24 @@ export class LoginComponent {
   ) {}
   
   login(): void {
-    if (!this.username.trim() || !this.password.trim()) {
+    if (!this.username.trim() || !this.password.trim() || this.isLoading) {
       return;
     }
     
-    const success = this.authService.login(this.username, this.password);
+    this.isLoading = true;
+    this.errorMessage = '';
     
-    if (success) {
-      this.router.navigate(['/game']);
-    } else {
-      this.errorMessage = 'Invalid username or password';
-    }
+    this.authService.login(this.username, this.password).subscribe({
+      next: () => {
+        this.router.navigate(['/game']);
+      },
+      error: (error) => {
+        this.errorMessage = error.message || 'Login failed. Please try again.';
+        this.isLoading = false;
+      },
+      complete: () => {
+        this.isLoading = false;
+      }
+    });
   }
 }

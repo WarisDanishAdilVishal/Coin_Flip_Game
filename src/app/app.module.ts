@@ -4,6 +4,7 @@ import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
+import { ProfileService } from './services/profile.service';
 
 @NgModule({
   declarations: [AppComponent],
@@ -13,7 +14,8 @@ import { AuthInterceptor } from './interceptors/auth.interceptor';
     HttpClientModule
   ],
   providers: [
-    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+    ProfileService
   ],
   bootstrap: [AppComponent]
 })

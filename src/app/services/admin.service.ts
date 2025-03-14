@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { GameStats, Transaction, WithdrawalRequest, UserManagement } from '../models/admin.model';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -10,7 +11,10 @@ import { GameStats, Transaction, WithdrawalRequest, UserManagement } from '../mo
 export class AdminService {
   private apiUrl = `${environment.apiUrl}/admin`;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) {}
 
   getGameStats(): Observable<GameStats[]> {
     return this.http.get<GameStats[]>(`${this.apiUrl}/stats`);
@@ -38,5 +42,12 @@ export class AdminService {
 
   rejectWithdrawal(id: string): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/withdrawals/${id}/reject`, {});
+  }
+  
+  // Check if user is an admin by checking their role
+  isAdmin(username: string): boolean {
+    const currentUser = this.authService.getCurrentUser();
+    // Check if the user has ROLE_ADMIN
+    return currentUser?.role === 'ROLE_ADMIN';
   }
 }

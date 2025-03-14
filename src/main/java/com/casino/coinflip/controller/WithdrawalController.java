@@ -5,16 +5,20 @@ import com.casino.coinflip.entity.User;
 import com.casino.coinflip.entity.WithdrawalRequest;
 import com.casino.coinflip.service.WithdrawalService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
-@RequestMapping("/api/withdrawals")
-@RequiredArgsConstructor
+@RequestMapping("/withdrawals")
 public class WithdrawalController {
     private final WithdrawalService withdrawalService;
+    
+    // Constructor
+    public WithdrawalController(WithdrawalService withdrawalService) {
+        this.withdrawalService = withdrawalService;
+    }
 
     @PostMapping
     public ResponseEntity<WithdrawalRequest> createWithdrawalRequest(
