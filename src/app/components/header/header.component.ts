@@ -19,7 +19,7 @@ import { AuthService } from '../../services/auth.service';
       <div class="max-w-7xl mx-auto flex justify-between items-center">
         <div class="flex items-center">
           <h1 class="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 game-title">
-            Coin Flip Casino
+            Stake Paradise
           </h1>
         </div>
         

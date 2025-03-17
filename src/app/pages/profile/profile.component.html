@@ -1,11 +1,11 @@
-<div class="min-h-screen text-white flex flex-col bg-black">
+<div class="min-h-screen text-white flex flex-col bg-black relative">
     <div class="absolute inset-0 bg-gradient-to-b from-[#ff0080]/20 via-[#40e0d0]/20 to-[#ff8c00]/20 pointer-events-none bg-gradient-animate"></div>
     
     <app-header [balance]="userBalance"></app-header>
     
-    <div class="flex-1 flex py-2 sm:py-4 relative overflow-x-hidden">
-      <!-- Left Sidebar - Moved up by reducing top padding -->
-      <div class="w-64 lg:w-72 flex-shrink-0 pl-2 sm:pl-4">
+    <div class="flex-1 flex flex-col md:flex-row py-2 sm:py-4 relative overflow-x-hidden">
+      <!-- Sidebar - Full width on mobile, sidebar on desktop  -->
+      <div class="w-full md:w-64 lg:w-72 flex-shrink-0 px-2 sm:px-4 mb-4 md:mb-0">
         <div class="top-2">
           <div class="bg-black/50 backdrop-blur-lg rounded-xl p-4 border border-pink-500/30 shadow-neon mb-4">
             <div>
@@ -25,9 +25,10 @@
             </div>
             
             <div class="space-y-2">
+              <div class="flex md:block overflow-x-auto md:overflow-visible pb-2 md:pb-0 -mx-1 px-1 md:space-y-2"></div>
               <a 
                 (click)="setActiveSection('profile')"
-                class="flex items-center gap-3 p-3 rounded-lg cursor-pointer"
+                class="flex-shrink-0 md:flex-shrink flex items-center gap-3 p-3 rounded-lg cursor-pointer"
                 [ngClass]="activeSection === 'profile' ? 'bg-gradient-to-r from-pink-500/30 to-purple-500/30 text-white' : 'bg-black/30 text-white/70 hover:bg-black/50 hover:text-white'"
               >
                 <lucide-icon name="user" [size]="18"></lucide-icon>
@@ -62,14 +63,14 @@
         <div class="max-w-4xl">
           <!-- Profile Section -->
           <section id="profile" *ngIf="activeSection === 'profile'" class="mb-8">
-            <div class="bg-black/50 backdrop-blur-lg rounded-xl p-6 border border-pink-500/30 shadow-neon">
+            <div class="bg-black/50 backdrop-blur-lg rounded-xl p-4 sm:p-6 border border-pink-500/30 shadow-neon">
               <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-pink-300">
                 <lucide-icon name="user" [size]="20"></lucide-icon>
                 Profile Information
               </h2>
               
               <div class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div class="space-y-2">
                     <p class="text-pink-300 text-sm">Username</p>
                     <p class="text-white font-medium">{{ username || 'User' }}</p>
@@ -80,7 +81,7 @@
                   </div>
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div class="space-y-2">
                     <p class="text-pink-300 text-sm">Member Since</p>
                     <p class="text-white font-medium flex items-center gap-2">
@@ -90,7 +91,7 @@
                   </div>
                   <div class="space-y-2">
                     <p class="text-pink-300 text-sm">Account Status</p>
-                    <p class="text-white font-medium flex items-center gap-2">
+                    <p class="text-white font-medium flex items-center gap-4 sm:gap-6">
                       <span [ngClass]="status === 'ACTIVE' ? 'text-green-400' : 'text-red-400'">
                         {{ status || 'Active' }}
                       </span>
@@ -108,10 +109,10 @@
                     <p>There was an error loading your game statistics. Please try again later.</p>
                   </div>
                   
-                  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                     <div class="bg-black/50 p-4 rounded-lg border border-pink-500/20">
                       <div class="flex justify-between items-center mb-2">
-                        <p class="text-pink-300 text-sm">Total Games</p>
+                        <p class="text-pink-300 text-xs sm:text-sm">Total Games</p>
                         <lucide-icon name="award" [size]="16" class="text-pink-400"></lucide-icon>
                       </div>
                       <p *ngIf="isLoadingProfile" class="text-white text-xl font-bold animate-pulse">...</p>
@@ -120,7 +121,7 @@
                     
                     <div class="bg-black/50 p-4 rounded-lg border border-green-500/20">
                       <div class="flex justify-between items-center mb-2">
-                        <p class="text-green-300 text-sm">Games Won</p>
+                        <p class="text-green-300 text-xs sm:text-sm">Games Won</p>
                         <lucide-icon name="trending-up" [size]="16" class="text-green-400"></lucide-icon>
                       </div>
                       <p *ngIf="isLoadingProfile" class="text-green-400 text-xl font-bold animate-pulse">...</p>
@@ -129,7 +130,7 @@
                     
                     <div class="bg-black/50 p-4 rounded-lg border border-red-500/20">
                       <div class="flex justify-between items-center mb-2">
-                        <p class="text-red-300 text-sm">Games Lost</p>
+                        <p class="text-red-300 text-xs sm:text-sm">Games Lost</p>
                         <lucide-icon name="trending-down" [size]="16" class="text-red-400"></lucide-icon>
                       </div>
                       <p *ngIf="isLoadingProfile" class="text-red-400 text-xl font-bold animate-pulse">...</p>
@@ -138,7 +139,7 @@
                     
                     <div class="bg-black/50 p-4 rounded-lg border border-blue-500/20">
                       <div class="flex justify-between items-center mb-2">
-                        <p class="text-blue-300 text-sm">Win Rate</p>
+                        <p class="text-blue-300 text-xs sm:text-sm">Win Rate</p>
                         <lucide-icon name="percent" [size]="16" class="text-blue-400"></lucide-icon>
                       </div>
                       <p *ngIf="isLoadingProfile" class="text-blue-400 text-xl font-bold animate-pulse">...</p>
@@ -147,7 +148,7 @@
                   </div>
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div class="space-y-2">
                     <p class="text-pink-300 text-sm">Current Balance</p>
                     <p class="text-white font-bold text-xl">₹{{ userBalance || 0 }}</p>
@@ -171,7 +172,7 @@
           <!-- Game History Section -->
           <section id="history" *ngIf="activeSection === 'history'" class="mb-8">
             <div class="bg-black/50 backdrop-blur-lg rounded-xl p-6 border border-blue-500/30 shadow-neon-blue">
-              <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-blue-300">
+              <h2 class="text-xl font-bold mb-4 sm:mb-6 flex items-center gap-2 text-blue-300">
                 <lucide-icon name="history" [size]="20"></lucide-icon>
                 Recent Game History
                 <span *ngIf="loadingMoreHistory && gameHistory.length === 0" class="ml-2 text-xs font-normal text-blue-300/70">(Loading...)</span>
@@ -196,7 +197,7 @@
               </div>
               
               <div *ngIf="gameHistory.length > 0" class="overflow-x-auto -mx-4 sm:mx-0">
-                <div class="min-w-[600px] px-4 sm:px-0">
+                <div class="min-w-[600px] px-4 sm:px-0 py-8">
                   <table class="w-full">
                     <thead>
                       <tr class="text-blue-300 text-sm">

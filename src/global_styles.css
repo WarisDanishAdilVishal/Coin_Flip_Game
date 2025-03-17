@@ -49,9 +49,9 @@
 
 .bg-neon-bulbs {
   /* background-color: #000; */
-  background-image: 'url("src/assets/background.jpg")';
+  /* background-image: 'url("src/assets/background.jpg")';
   background-repeat: 'no-repeat';
-  background-size: 'cover';
+  background-size: 'cover'; */
   /* background-image: 
     radial-gradient(circle at 20px 20px, #ff0080 2px, transparent 4px),
     radial-gradient(circle at 60px 20px, #40e0d0 2px, transparent 4px),
@@ -67,9 +67,9 @@
   content: '';
   position: absolute;
   inset: 0;
-  background-image: 'url("src/assets/background.jpg")';
+  /* background-image: 'url("src/assets/background.jpg")';
   background-repeat: 'no-repeat';
-  background-size: 'cover';
+  background-size: 'cover'; */
   /* background-image: 
     radial-gradient(circle at 20px 20px, #ff0080 4px, transparent 6px),
     radial-gradient(circle at 60px 20px, #40e0d0 4px, transparent 6px),
@@ -87,9 +87,9 @@
   content: '';
   position: absolute;
   inset: 0;
-  background-image: 'url("src/assets/background.jpg")';
+  /* background-image: 'url("src/assets/background.jpg")';
   background-repeat: 'no-repeat';
-  background-size: 'cover';
+  background-size: 'cover'; */
   /* background-image: 
     radial-gradient(circle at 20px 20px, #ff0080 6px, transparent 8px),
     radial-gradient(circle at 60px 20px, #40e0d0 6px, transparent 8px),
