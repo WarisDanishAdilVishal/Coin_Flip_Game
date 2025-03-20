@@ -69,4 +69,17 @@ public class WithdrawalService {
     public List<WithdrawalRequest> getWithdrawalHistory(Long userId) {
         return withdrawalRequestRepository.findByUserIdOrderByTimestampDesc(userId);
     }
+    
+    public List<WithdrawalRequest> getAllWithdrawalRequests() {
+        List<WithdrawalRequest> requests = withdrawalRequestRepository.findAll();
+        
+        // Force initialization of lazy-loaded user data
+        requests.forEach(request -> {
+            if (request.getUser() != null) {
+                request.getUser().getUsername();
+            }
+        });
+        
+        return requests;
+    }
 }

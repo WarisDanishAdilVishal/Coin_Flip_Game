@@ -65,7 +65,13 @@ public class CustomUserDetailsService implements UserDetailsService {
         @Override
         public Collection<SimpleGrantedAuthority> getAuthorities() {
             return user.getRoles().stream()
-                    .map(SimpleGrantedAuthority::new)
+                    .map(role -> {
+                        // Ensure the role has the ROLE_ prefix
+                        if (!role.startsWith("ROLE_")) {
+                            return new SimpleGrantedAuthority("ROLE_" + role);
+                        }
+                        return new SimpleGrantedAuthority(role);
+                    })
                     .collect(Collectors.toList());
         }
         

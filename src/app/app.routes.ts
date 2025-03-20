@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './pages/login/login.component';
 import { SignupComponent } from './pages/signup/signup.component';
-import { CoinFlipGameComponent } from './components/coin-flip-game/coin-flip-game.component';
+import { CoinFlipGameComponent } from './pages/coin-flip-game/coin-flip-game.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { AdminDashboardComponent } from './pages/admin/admin-dashboard.component';
 import { AuthGuard } from './guards/auth.guard';

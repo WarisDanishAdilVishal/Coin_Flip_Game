@@ -4,8 +4,9 @@ import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { RouterModule } from '@angular/router';
 import { AppComponent } from './app.component';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
+import { LoadingInterceptor } from './interceptors/loading.interceptor';
 import { ProfileService } from './services/profile.service';
-import { NgxUiLoaderModule, NgxUiLoaderHttpModule } from 'ngx-ui-loader';
+import { LoaderComponent } from './components/loader/loader.component';
 
 @NgModule({
   declarations: [AppComponent],
@@ -13,11 +14,11 @@ import { NgxUiLoaderModule, NgxUiLoaderHttpModule } from 'ngx-ui-loader';
     BrowserModule,
     RouterModule,
     HttpClientModule,
-    NgxUiLoaderModule,
-    NgxUiLoaderHttpModule.forRoot({ showForeground: false })
+    LoaderComponent
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+    { provide: HTTP_INTERCEPTORS, useClass: LoadingInterceptor, multi: true },
     ProfileService
   ],
   bootstrap: [AppComponent]

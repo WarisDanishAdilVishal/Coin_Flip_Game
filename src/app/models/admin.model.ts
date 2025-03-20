@@ -4,6 +4,7 @@ export interface GameStats {
   totalWagered: number;
   totalWon: number;
   profitLoss: number;
+  houseProfit: number;
 }
 
 export interface Transaction {
@@ -13,7 +14,7 @@ export interface Transaction {
   type: 'deposit' | 'withdrawal' | 'game';
   amount: number;
   status: 'completed' | 'pending' | 'failed';
-  timestamp: Date;
+  timestamp: string;
   details?: string;
 }
 
@@ -25,7 +26,7 @@ export interface WithdrawalRequest {
   method: string;
   details: string;
   status: 'pending' | 'approved' | 'rejected';
-  timestamp: Date;
+  timestamp: string;
 }
 
 export interface UserStats {
@@ -33,14 +34,18 @@ export interface UserStats {
   totalWagered: number;
   totalWon: number;
   profitLoss: number;
-  lastActive: Date;
+  lastActive: string;
 }
 
 export interface UserManagement {
   id: string;
   username: string;
   balance: number;
-  createdAt: Date;
   status: 'active' | 'suspended' | 'blocked';
-  stats: UserStats;
+  createdAt: string;
+  stats?: {
+    totalGames: number;
+    profitLoss: number;
+    lastActive: string;
+  };
 }

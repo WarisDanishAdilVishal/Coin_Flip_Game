@@ -2,8 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
-
-import { NgxUiLoaderService } from 'ngx-ui-loader';
+import { LoaderComponent } from './components/loader/loader.component';
 
 @Component({
   selector: 'app-root',
@@ -12,8 +11,13 @@ import { NgxUiLoaderService } from 'ngx-ui-loader';
     CommonModule,
     RouterModule,
     HttpClientModule,
-
+    LoaderComponent
   ],
-  templateUrl: './app.component.html',
+  template: `
+    <app-loader></app-loader>
+    <router-outlet></router-outlet>
+  `
 })
-export class AppComponent {}
+export class AppComponent {
+  // Application component
+}

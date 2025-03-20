@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { LucideAngularModule, User, LogOut, Coins } from 'lucide-angular';
+import { LucideAngularModule, User, LogOut, Coins, ShieldAlert } from 'lucide-angular';
 import { ButtonComponent } from '../button/button.component';
 import { AuthService } from '../../services/auth.service';
 
@@ -17,10 +17,21 @@ import { AuthService } from '../../services/auth.service';
   template: `
     <header class="w-full bg-black/80 backdrop-blur-md border-b border-pink-500/20 py-3 px-4 sm:px-6">
       <div class="max-w-7xl mx-auto flex justify-between items-center">
-        <div class="flex items-center">
+        <div class="flex items-center gap-3">
           <h1 class="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 game-title">
             Stake Paradise
           </h1>
+          
+          <!-- Admin button - only visible to admins -->
+          <app-button 
+            *ngIf="isAdmin()"
+            (onClick)="redirectToAdmin()"
+            className="bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-400/30 shadow-neon-purple"
+            fontSize="0.75rem"
+            padding="0.375rem 0.75rem"
+          >
+            <lucide-icon name="shield-alert" [size]="14" class="mr-1"></lucide-icon> Admin
+          </app-button>
         </div>
         
         <div class="flex items-center gap-3 sm:gap-4">
@@ -37,7 +48,6 @@ import { AuthService } from '../../services/auth.service';
             </div>
             <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border border-black"></div>
           </a>
-          
           <app-button
             (onClick)="logout()"
             className="bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-400/30 shadow-neon-red"
@@ -63,5 +73,14 @@ export class HeaderComponent {
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+  
+  redirectToAdmin(): void {
+    this.router.navigate(['/admin']);
+  }
+  
+  isAdmin(): boolean {
+    const currentUser = this.authService.getCurrentUser();
+    return currentUser?.role === 'ROLE_ADMIN';
   }
 }
