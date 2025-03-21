@@ -6,6 +6,8 @@ import com.casino.coinflip.repository.TransactionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class TransactionService {
@@ -38,5 +40,37 @@ public class TransactionService {
         transaction.setDetails("Deposit");
         
         return transactionRepository.save(transaction);
+    }
+
+    @Transactional
+    public Transaction createDepositTransaction(User user, BigDecimal amount, String method, String details) {
+        Transaction transaction = new Transaction();
+        transaction.setUser(user);
+        transaction.setAmount(amount);
+        transaction.setType(Transaction.TransactionType.DEPOSIT);
+        transaction.setStatus(Transaction.TransactionStatus.COMPLETED);
+        transaction.setPaymentMethod(method);
+        transaction.setDetails(details != null ? details : "Deposit via " + method);
+        
+        return transactionRepository.save(transaction);
+    }
+    
+    public List<Transaction> getAllDeposits() {
+        List<Transaction> allTransactions = transactionRepository.findAll();
+        
+        // Filter to get only deposit transactions
+        List<Transaction> deposits = allTransactions.stream()
+            .filter(t -> t.getType() == Transaction.TransactionType.DEPOSIT)
+            .collect(Collectors.toList());
+        
+        // Force initialization of lazy-loaded user data
+        deposits.forEach(deposit -> {
+            if (deposit.getUser() != null) {
+                deposit.getUser().getUsername(); // Force load username
+                deposit.getUser().getId(); // Force load ID
+            }
+        });
+        
+        return deposits;
     }
 }

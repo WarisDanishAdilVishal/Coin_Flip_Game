@@ -16,6 +16,7 @@ export interface Transaction {
   status: 'completed' | 'pending' | 'failed';
   timestamp: string;
   details?: string;
+  method?: string;
 }
 
 export interface WithdrawalRequest {

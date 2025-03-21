@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LucideAngularModule, User, History, CreditCard, LogOut, ChevronRight, Calendar, ArrowRight, Award, TrendingUp, Percent } from 'lucide-angular';
 import { HeaderComponent } from '../../components/header/header.component';
@@ -10,6 +10,8 @@ import { ProfileService } from '../../services/profile.service';
 import { GameService } from '../../services/game.service';
 import { GameHistory } from '../../models/game-history.model';
 import { User as UserModel } from '../../models/user.model';
+import { WithdrawalService } from '../../services/withdrawal.service';
+import { WithdrawalRequest } from '../../models/withdrawal.model';
 
 @Component({
   selector: 'app-profile',
@@ -17,6 +19,7 @@ import { User as UserModel } from '../../models/user.model';
   imports: [
     CommonModule,
     FormsModule,
+    ReactiveFormsModule,
     LucideAngularModule,
     HeaderComponent,
     ButtonComponent
@@ -55,6 +58,7 @@ export class ProfileComponent implements OnInit {
   isLoadingHistory: boolean = false;
   errorMessage: string = '';
   
+  withdrawalForm: FormGroup;
   withdrawalAmount: number = 0;
   paymentMethod: string = 'upi';
   upiId: string = '';
@@ -66,7 +70,7 @@ export class ProfileComponent implements OnInit {
   withdrawalSuccess: boolean = false;
   withdrawalError: string | null = null;
   lastWithdrawalAmount: number = 0;
-  withdrawalHistory: any[] = [];
+  withdrawalHistory: WithdrawalRequest[] = [];
   
   // Loading states
   isLoadingProfile: boolean = true;
@@ -108,154 +112,59 @@ export class ProfileComponent implements OnInit {
     private authService: AuthService,
     private profileService: ProfileService,
     private gameService: GameService,
-    private router: Router
-  ) {}
+    private withdrawalService: WithdrawalService,
+    private router: Router,
+    private fb: FormBuilder
+  ) {
+    this.withdrawalForm = this.fb.group({
+      amount: ['', [Validators.required, Validators.min(1000)]],
+      method: ['upi'],
+      details: ['', Validators.required]
+    });
+  }
   
   ngOnInit(): void {
-    console.log('ProfileComponent ngOnInit called');
+    console.log('Profile Component: Initializing...');
+    this.isLoadingProfile = true;
     
-    // Hard reset all values to zero to avoid any undefined or null issues
-    this.totalGames = 0;
-    this.gamesWon = 0;
-    this.gamesLost = 0;
-    this.lifetimeEarnings = 0;
-    this.highestWin = 0;
-    this.winRate = 0;
-    
-    // First get user from local storage for quick display
     const currentUser = this.authService.getCurrentUser();
+    console.log('Profile Component: Current user:', currentUser);
+    
     if (!currentUser) {
-      console.error('No currentUser in AuthService, redirecting to login');
+      console.log('Profile Component: No user found, redirecting to login');
       this.router.navigate(['/login']);
+      this.isLoadingProfile = false;
       return;
     }
     
-    console.log('CurrentUser from localStorage:', JSON.stringify(currentUser, null, 2));
+    this.username = currentUser.username;
+    this.userBalance = currentUser.balance || 0;
     
-    // Set initial values from localStorage
-    this.username = currentUser.username || 'Unknown User';
-    this.userBalance = Number(currentUser.balance) || 0;
-    if (currentUser.createdAt) {
-      this.memberSince = this.formatDate(new Date(currentUser.createdAt));
-    } else {
-      this.memberSince = 'Today';
-    }
-    
-    // SUPER AGGRESSIVE TYPE CONVERSION - force all values to be numbers
-    try {
-      // Convert all values to numbers using Number() constructor first, then parseInt/parseFloat as fallback
-      if (currentUser.totalGames !== undefined && currentUser.totalGames !== null) {
-        // Try multiple conversion approaches
-        const converted = Number(currentUser.totalGames);
-        this.totalGames = isNaN(converted) ? parseInt(String(currentUser.totalGames), 10) || 0 : converted;
-      }
-      
-      if (currentUser.gamesWon !== undefined && currentUser.gamesWon !== null) {
-        const converted = Number(currentUser.gamesWon);
-        this.gamesWon = isNaN(converted) ? parseInt(String(currentUser.gamesWon), 10) || 0 : converted;
-      }
-      
-      if (currentUser.gamesLost !== undefined && currentUser.gamesLost !== null) {
-        const converted = Number(currentUser.gamesLost);
-        this.gamesLost = isNaN(converted) ? parseInt(String(currentUser.gamesLost), 10) || 0 : converted;
-      }
-      
-      if (currentUser.lifetimeEarnings !== undefined && currentUser.lifetimeEarnings !== null) {
-        const converted = Number(currentUser.lifetimeEarnings);
-        this.lifetimeEarnings = isNaN(converted) ? parseFloat(String(currentUser.lifetimeEarnings)) || 0 : converted;
-      }
-      
-      if (currentUser.highestWin !== undefined && currentUser.highestWin !== null) {
-        const converted = Number(currentUser.highestWin);
-        this.highestWin = isNaN(converted) ? parseFloat(String(currentUser.highestWin)) || 0 : converted;
-      }
-      
-      if (currentUser.status) {
-        this.status = currentUser.status;
-      }
-      
-      // Log everything with types for debugging
-      console.log('After AGGRESSIVE type conversion - values from localStorage:', {
-        totalGames: `${this.totalGames} (${typeof this.totalGames})`,
-        gamesWon: `${this.gamesWon} (${typeof this.gamesWon})`,
-        gamesLost: `${this.gamesLost} (${typeof this.gamesLost})`,
-        lifetimeEarnings: `${this.lifetimeEarnings} (${typeof this.lifetimeEarnings})`,
-        highestWin: `${this.highestWin} (${typeof this.highestWin})`,
-      });
-    } catch (error) {
-      console.error('Error processing values from localStorage:', error);
-      // Reset to defaults if there's an error
-      this.totalGames = 0;
-      this.gamesWon = 0;
-      this.gamesLost = 0;
-      this.lifetimeEarnings = 0;
-      this.highestWin = 0;
-      this.winRate = 0;
-    }
-    
-    // Calculate win rate from localStorage data if available
-    if (this.totalGames > 0) {
-      this.winRate = Math.round((this.gamesWon / this.totalGames) * 100);
-      console.log('Win rate calculated:', this.winRate);
-    } else {
-      this.winRate = 0;
-    }
-    
-    // IMPORTANT: Force values to be valid numbers
-    this.ensureNumericValues();
-    
-    // Cache initial data
-    this.cacheProfileData();
-    
-    // First update attempt immediately
-    this.forceUpdateDOMValues();
-    
-    // Multiple scheduled updates to ensure UI shows data
-    const updateTimes = [50, 200, 500, 1000, 2000];
-    updateTimes.forEach(time => {
-      setTimeout(() => {
-        if (this.isLoadingProfile && time >= 2000) {
-          // Force clear loading state if it's been too long
-          console.log('Force clearing loading state after timeout');
-          this.isLoadingProfile = false;
-        }
-        
-        // Always ensure values are numbers before updating
-        this.ensureNumericValues();
-        
-        // And force DOM update
-        this.forceUpdateDOMValues();
-      }, time);
-    });
-    
-    // Then fetch latest data from backend
+    // Load profile data
     this.fetchProfileData();
     
-    // Load appropriate data based on active section
-    if (this.activeSection === 'history') {
-      this.loadGameHistory();
-    }
+    // Load withdrawal history
+    this.loadWithdrawalHistory();
     
-    // Additional final check after all data should be loaded
-    setTimeout(() => {
-      // Check if stats are still not showing
-      const statContainers = document.querySelectorAll('.bg-black\\/50 p-4 .text-xl.font-bold');
-      let needsUpdate = false;
-      
-      if (statContainers) {
-        statContainers.forEach(container => {
-          // If any container shows 0 or is empty, we need to update
-          if (!container.textContent || container.textContent === '...' || container.textContent === '0' || container.textContent === '0%') {
-            needsUpdate = true;
-          }
-        });
-      }
-      
-      if (needsUpdate) {
-        console.log('Stats still not showing properly, forcing update again');
-        this.forceUpdateDOMValues();
-      }
-    }, 3500);
+    // Load game history
+    this.loadGameHistory();
+  }
+  
+  formatWithdrawalStatus(status: string): string {
+    switch (status.toLowerCase()) {
+      case 'approved':
+        return 'Approved';
+      case 'pending':
+        return 'Pending';
+      case 'rejected':
+        return 'Rejected';
+      default:
+        return status;
+    }
+  }
+  
+  loadProfileData(): void {
+    this.fetchProfileData();
   }
   
   // New helper method to ensure all values are valid numbers
@@ -450,15 +359,16 @@ export class ProfileComponent implements OnInit {
     });
   }
   
-  formatDateTime(date: Date): string {
+  formatDateTime(date: Date | string): string {
     if (!date) return '';
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
       hour12: true
-    }).format(new Date(date));
+    }).format(dateObj);
   }
   
   formatDate(date: Date): string {
@@ -639,55 +549,73 @@ export class ProfileComponent implements OnInit {
     }
   }
   
-  submitWithdrawal(event: Event): void {
-    event.preventDefault();
-    
-    if (this.withdrawalAmount <= 0) {
-      this.withdrawalError = 'Please enter a valid amount';
+  submitWithdrawal() {
+    if (!this.withdrawalForm.valid) {
       return;
     }
-    
-    if (this.withdrawalAmount > this.userBalance) {
-      this.withdrawalError = 'Withdrawal amount exceeds your balance';
+
+    const amount = this.withdrawalForm.get('amount')?.value;
+    const method = this.withdrawalForm.get('method')?.value;
+    const details = this.withdrawalForm.get('details')?.value;
+
+    // Validate amount
+    if (amount < 1000) {
+      alert('Minimum withdrawal amount is ₹1000');
       return;
     }
-    
-    if (this.paymentMethod === 'upi' && !this.upiId) {
-      this.withdrawalError = 'Please enter your UPI ID';
-      return;
-    } else if (this.paymentMethod === 'bank_transfer' && (!this.accountNumber || !this.ifscCode || !this.accountName)) {
-      this.withdrawalError = 'Please enter all bank details';
-      return;
-    } else if (this.paymentMethod === 'paytm' && !this.paytmNumber) {
-      this.withdrawalError = 'Please enter your Paytm number';
+
+    if (amount > this.userBalance) {
+      alert('Insufficient balance');
       return;
     }
-    
-    this.withdrawalError = null;
-    this.withdrawalProcessing = true;
-    
-    setTimeout(() => {
-      this.withdrawalProcessing = false;
-      this.withdrawalSuccess = true;
-      this.lastWithdrawalAmount = this.withdrawalAmount;
-      
-      this.withdrawalHistory.unshift({
-        id: Math.floor(Math.random() * 1000000),
-        amount: this.withdrawalAmount,
-        method: this.paymentMethod,
-        status: 'pending',
-        timestamp: new Date()
-      });
-      
-      this.withdrawalAmount = 0;
-      this.upiId = '';
-      this.accountNumber = '';
-      this.ifscCode = '';
-      this.accountName = '';
-      this.paytmNumber = '';
-      
-      this.userBalance -= this.lastWithdrawalAmount;
-    }, 2000);
+
+    // Validate payment method details
+    if (!details) {
+      alert('Please enter payment details');
+      return;
+    }
+
+    // Convert method to uppercase to match backend enum
+    const methodUpperCase = method.toUpperCase();
+
+    this.withdrawalService.createWithdrawalRequest(amount, methodUpperCase, details).subscribe({
+      next: (response) => {
+        alert('Withdrawal request submitted successfully');
+        this.withdrawalHistory.unshift({
+          id: response.id,
+          amount: response.amount,
+          method: response.method,
+          details: response.details,
+          status: response.status.toLowerCase() as 'approved' | 'pending' | 'rejected',
+          timestamp: response.timestamp
+        });
+        this.withdrawalForm.reset();
+        this.userBalance -= amount;
+        this.cacheProfileData();
+      },
+      error: (error) => {
+        console.error('Error submitting withdrawal:', error);
+        alert(error.error?.message || 'Failed to submit withdrawal request');
+      }
+    });
+  }
+  
+  loadWithdrawalHistory(): void {
+    this.withdrawalService.getWithdrawalHistory().subscribe({
+      next: (history) => {
+        this.withdrawalHistory = history.map(withdrawal => ({
+          id: withdrawal.id,
+          amount: withdrawal.amount,
+          method: withdrawal.method,
+          details: withdrawal.details,
+          status: withdrawal.status.toLowerCase() as 'approved' | 'pending' | 'rejected',
+          timestamp: withdrawal.timestamp
+        }));
+      },
+      error: (error) => {
+        console.error('Error loading withdrawal history:', error);
+      }
+    });
   }
   
   Back(): void {

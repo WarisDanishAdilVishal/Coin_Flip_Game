@@ -6,9 +6,12 @@ import com.casino.coinflip.repository.GameRepository;
 import com.casino.coinflip.repository.GameRepository.GameStats;
 import com.casino.coinflip.service.UserService;
 import com.casino.coinflip.service.WithdrawalService;
+import com.casino.coinflip.service.TransactionService;
 import com.casino.coinflip.dto.TransactionDto;
 import com.casino.coinflip.dto.UserManagementDto;
 import com.casino.coinflip.entity.Transaction;
+import com.casino.coinflip.entity.WithdrawalRequest;
+import com.casino.coinflip.dto.WithdrawalRequestDto;
 
 //import jakarta.validation.Valid;
 
@@ -29,12 +32,15 @@ public class AdminController {
     private final GameRepository gameRepository;
     private final UserService userService;
     private final WithdrawalService withdrawalService;
+    private final TransactionService transactionService;
     
     // Constructor
-    public AdminController(GameRepository gameRepository, UserService userService, WithdrawalService withdrawalService) {
+    public AdminController(GameRepository gameRepository, UserService userService, 
+                          WithdrawalService withdrawalService, TransactionService transactionService) {
         this.gameRepository = gameRepository;
         this.userService = userService;
         this.withdrawalService = withdrawalService;
+        this.transactionService = transactionService;
     }
 
     @GetMapping("/stats")
@@ -75,9 +81,33 @@ public class AdminController {
         return ResponseEntity.ok(transactionDtos);
     }
     
+    @GetMapping("/deposits")
+    public ResponseEntity<?> getAllDeposits() {
+        try {
+            System.out.println("Received request for deposit transactions");
+            List<Transaction> deposits = transactionService.getAllDeposits();
+            List<TransactionDto> depositDtos = deposits.stream()
+                .map(TransactionDto::new)
+                .collect(Collectors.toList());
+            System.out.println("Found " + depositDtos.size() + " deposit transactions");
+            return ResponseEntity.ok(depositDtos);
+        } catch (Exception e) {
+            System.err.println("Error fetching deposit transactions: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error fetching deposit transactions: " + e.getMessage());
+        }
+    }
+    
     @GetMapping("/withdrawals")
-    public ResponseEntity<?> getAllWithdrawals() {
-        return ResponseEntity.ok(withdrawalService.getAllWithdrawalRequests());
+    public ResponseEntity<?> getAllWithdrawals(@RequestParam(required = false) WithdrawalRequest.WithdrawalStatus status) {
+        try {
+            System.out.println("Received request for withdrawals with status: " + status);
+            List<WithdrawalRequestDto> requests = withdrawalService.getAllWithdrawalRequests(status);
+            System.out.println("Found " + requests.size() + " withdrawal requests");
+            return ResponseEntity.ok(requests);
+        } catch (Exception e) {
+            System.err.println("Error fetching withdrawal requests: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error fetching withdrawal requests: " + e.getMessage());
+        }
     }
 
     @PutMapping("/users/{userId}/status")

@@ -160,5 +160,7 @@
       *ngIf="showAddFunds"
       (onClose)="showAddFunds = false"
       (onAddFunds)="addFunds($event)"
+      [isLoading]="isAddingFunds"
+      [errorMessage]="fundAddError"
     ></app-payment-page>
   </div>

@@ -13,6 +13,7 @@ public class TransactionDto {
     private String status;
     private String timestamp;
     private String details;
+    private String method;
 
     public TransactionDto(Transaction transaction) {
         this.id = transaction.getId().toString();
@@ -23,6 +24,7 @@ public class TransactionDto {
         this.status = transaction.getStatus().name().toLowerCase();
         this.timestamp = transaction.getTimestamp().format(DateTimeFormatter.ISO_DATE_TIME);
         this.details = transaction.getDetails();
+        this.method = transaction.getPaymentMethod();
     }
 
     // Getters and setters
@@ -49,4 +51,7 @@ public class TransactionDto {
     
     public String getDetails() { return details; }
     public void setDetails(String details) { this.details = details; }
+    
+    public String getMethod() { return method; }
+    public void setMethod(String method) { this.method = method; }
 } 

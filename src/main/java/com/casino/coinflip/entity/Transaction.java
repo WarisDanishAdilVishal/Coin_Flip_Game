@@ -30,6 +30,9 @@ public class Transaction {
     private LocalDateTime timestamp = LocalDateTime.now();
 
     private String details;
+    
+    // Payment method for deposits and withdrawals (e.g., UPI, Bank Transfer)
+    private String paymentMethod;
 
     public enum TransactionType {
         DEPOSIT, WITHDRAWAL, GAME
@@ -68,6 +71,10 @@ public class Transaction {
         return details;
     }
     
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+    
     // Setters
     public void setId(Long id) {
         this.id = id;
@@ -95,5 +102,9 @@ public class Transaction {
     
     public void setDetails(String details) {
         this.details = details;
+    }
+    
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
     }
 }

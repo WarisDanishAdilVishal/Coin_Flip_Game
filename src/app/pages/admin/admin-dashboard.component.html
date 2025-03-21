@@ -27,35 +27,84 @@
             <div class="space-y-2">
               <a 
                 (click)="setActiveSection('stats')"
-                class="flex items-center gap-3 p-3 rounded-lg cursor-pointer"
+                class="flex items-center justify-between p-3 rounded-lg cursor-pointer relative group"
                 [ngClass]="activeSection === 'stats' ? 'bg-gradient-to-r from-pink-500/30 to-purple-500/30 text-white' : 'bg-black/30 text-white/70 hover:bg-black/50 hover:text-white'"
               >
-                <lucide-icon name="bar-chart" [size]="18"></lucide-icon>
-                <span>Game Statistics</span>
+                <div class="flex items-center gap-3">
+                  <lucide-icon name="bar-chart" [size]="18"></lucide-icon>
+                  <span>Game Statistics</span>
+                </div>
+                <lucide-icon 
+                  *ngIf="activeSection === 'stats'" 
+                  name="chevron-right" 
+                  [size]="16" 
+                  class="text-white/70"
+                ></lucide-icon>
               </a>
               <a 
                 (click)="setActiveSection('transactions')"
-                class="flex items-center gap-3 p-3 rounded-lg cursor-pointer"
+                class="flex items-center justify-between p-3 rounded-lg cursor-pointer relative group"
                 [ngClass]="activeSection === 'transactions' ? 'bg-gradient-to-r from-pink-500/30 to-purple-500/30 text-white' : 'bg-black/30 text-white/70 hover:bg-black/50 hover:text-white'"
               >
-                <lucide-icon name="dollar-sign" [size]="18"></lucide-icon>
-                <span>Transactions</span>
+                <div class="flex items-center gap-3">
+                  <!-- <lucide-icon name="joystick" [size]="18"></lucide-icon> -->
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-joystick"><path d="M21 17a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2Z"/><path d="M6 15v-2"/><path d="M12 15V9"/><circle cx="12" cy="6" r="3"/></svg>
+                  <span>Games Played</span>
+                </div>
+                <lucide-icon 
+                  *ngIf="activeSection === 'transactions'" 
+                  name="chevron-right" 
+                  [size]="16" 
+                  class="text-white/70"
+                ></lucide-icon>
               </a>
               <a 
                 (click)="setActiveSection('withdrawals')"
-                class="flex items-center gap-3 p-3 rounded-lg cursor-pointer"
+                class="flex items-center justify-between p-3 rounded-lg cursor-pointer relative group"
                 [ngClass]="activeSection === 'withdrawals' ? 'bg-gradient-to-r from-pink-500/30 to-purple-500/30 text-white' : 'bg-black/30 text-white/70 hover:bg-black/50 hover:text-white'"
               >
-                <lucide-icon name="credit-card" [size]="18"></lucide-icon>
-                <span>Withdrawal Requests</span>
+                <div class="flex items-center gap-3">
+                  <lucide-icon name="credit-card" [size]="18"></lucide-icon>
+                  <span>Withdrawal Requests</span>
+                </div>
+                <lucide-icon 
+                  *ngIf="activeSection === 'withdrawals'" 
+                  name="chevron-right" 
+                  [size]="16" 
+                  class="text-white/70"
+                ></lucide-icon>
+              </a>
+              <a 
+                (click)="setActiveSection('deposits')"
+                class="flex items-center justify-between p-3 rounded-lg cursor-pointer relative group"
+                [ngClass]="activeSection === 'deposits' ? 'bg-gradient-to-r from-pink-500/30 to-purple-500/30 text-white' : 'bg-black/30 text-white/70 hover:bg-black/50 hover:text-white'"
+              >
+                <div class="flex items-center gap-3">
+                  <lucide-icon name="dollar-sign" [size]="18"></lucide-icon>
+                  <span>Deposits</span>
+                </div>
+                <lucide-icon 
+                  *ngIf="activeSection === 'deposits'" 
+                  name="chevron-right" 
+                  [size]="16" 
+                  class="text-white/70"
+                ></lucide-icon>
               </a>
               <a 
                 (click)="setActiveSection('users')"
-                class="flex items-center gap-3 p-3 rounded-lg cursor-pointer"
+                class="flex items-center justify-between p-3 rounded-lg cursor-pointer relative group"
                 [ngClass]="activeSection === 'users' ? 'bg-gradient-to-r from-pink-500/30 to-purple-500/30 text-white' : 'bg-black/30 text-white/70 hover:bg-black/50 hover:text-white'"
               >
-                <lucide-icon name="users" [size]="18"></lucide-icon>
-                <span>User Management</span>
+                <div class="flex items-center gap-3">
+                  <lucide-icon name="users" [size]="18"></lucide-icon>
+                  <span>User Management</span>
+                </div>
+                <lucide-icon 
+                  *ngIf="activeSection === 'users'" 
+                  name="chevron-right" 
+                  [size]="16" 
+                  class="text-white/70"
+                ></lucide-icon>
               </a>
             </div>
           </div>
@@ -133,38 +182,44 @@
             </div>
           </section>
           
-          <!-- Transactions Section -->
+          <!-- Transactions Section (renamed to Games Played) -->
           <section *ngIf="activeSection === 'transactions'" class="mb-8">
             <div class="bg-black/50 backdrop-blur-lg rounded-xl p-6 border border-blue-500/30 shadow-neon-blue">
               <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-blue-300">
-                <lucide-icon name="dollar-sign" [size]="20"></lucide-icon>
-                Transaction History
+                  <!-- <lucide-icon name="dice" [size]="20"></lucide-icon> -->
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-joystick"><path d="M21 17a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2Z"/><path d="M6 15v-2"/><path d="M12 15V9"/><circle cx="12" cy="6" r="3"/></svg>
+                  Games Played
               </h2>
               
-              <!-- Search and Filter -->
-              <div class="flex flex-col sm:flex-row gap-4 mb-6">
+              <!-- Search (now with bet amount filter) -->
+              <div class="flex flex-col md:flex-row gap-4 mb-6">
+                <!-- Search Input -->
                 <div class="relative flex-1">
-                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <lucide-icon name="search" [size]="18" class="text-blue-500/50"></lucide-icon>
-                  </div>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
+                    class="w-full bg-black/30 border border-blue-500/30 rounded-lg p-2 pl-10 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="Search by username or game ID"
                     [(ngModel)]="transactionSearch"
-                    (input)="filterTransactions()"
-                    class="w-full bg-black/50 border border-blue-500/30 rounded-md p-2 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                    placeholder="Search by username or transaction ID"
+                    (input)="filterGameTransactions()"
                   />
+                  <lucide-icon
+                    name="search"
+                    [size]="18"
+                    class="absolute left-1 top-1.5 text-blue-300/60"
+                  ></lucide-icon>
                 </div>
-                <select 
-                  [(ngModel)]="transactionTypeFilter"
-                  (change)="filterTransactions()"
-                  class="bg-black/50 border border-blue-500/30 rounded-md p-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                >
-                  <option value="all">All Types</option>
-                  <option value="deposit">Deposits</option>
-                  <option value="withdrawal">Withdrawals</option>
-                  <option value="game">Game Transactions</option>
-                </select>
+                
+                <!-- Bet Amount Filter -->
+                <div class="w-full md:w-48">
+                  <select
+                    class="w-full bg-black/30 border border-blue-500/30 rounded-lg p-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    [(ngModel)]="betAmountFilter"
+                    (change)="filterGameTransactions()"
+                  >
+                    <option [ngValue]="null">All Bet Amounts</option>
+                    <option *ngFor="let amount of betAmountOptions" [ngValue]="amount">₹{{ amount }}</option>
+                  </select>
+                </div>
               </div>
               
               <!-- Transactions Table -->
@@ -179,45 +234,31 @@
                   <table class="w-full" *ngIf="!isLoadingTransactions">
                     <thead>
                       <tr class="text-blue-300 text-sm">
-                        <th class="text-left pb-4">Date & Time</th>
-                        <th class="text-left pb-4">User</th>
-                        <th class="text-left pb-4">Type</th>
+                        <th class="text-left pb-4">Player</th>
+                        <th class="text-left pb-4">Result</th>
                         <th class="text-left pb-4">Amount</th>
-                        <th class="text-left pb-4">Status</th>
-                        <th class="text-left pb-4">Details</th>
+                        <th class="text-left pb-4">Date & Time</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr 
-                        *ngFor="let txn of paginatedTransactions" 
+                        *ngFor="let game of paginatedTransactions" 
                         class="border-t border-blue-500/10"
                       >
-                        <td class="py-4">{{ formatDateTime(txn.timestamp) }}</td>
-                        <td>{{ txn.username }}</td>
+                        <td>{{ game.username }}</td>
                         <td>
                           <span class="px-2 py-1 rounded-full text-xs font-medium"
                                 [ngClass]="{
-                                  'bg-green-500/20 text-green-400': txn.type === 'deposit',
-                                  'bg-red-500/20 text-red-400': txn.type === 'withdrawal',
-                                  'bg-blue-500/20 text-blue-400': txn.type === 'game'
+                                  'bg-green-500/20 text-green-400': game.amount > 0,
+                                  'bg-red-500/20 text-red-400': game.amount < 0
                                 }">
-                            {{ formatTransactionType(txn.type) }}
+                            {{ game.amount > 0 ? 'Win' : 'Loss' }}
                           </span>
                         </td>
-                        <td [ngClass]="txn.amount >= 0 ? 'text-green-400' : 'text-red-400'">
-                          {{ txn.amount >= 0 ? '+' : '-' }}₹{{ Math.abs(txn.amount).toLocaleString() }}
+                        <td [ngClass]="game.amount >= 0 ? 'text-green-400' : 'text-red-400'">
+                          {{ game.amount >= 0 ? '+' : '-' }}₹{{ Math.abs(game.amount).toLocaleString() }}
                         </td>
-                        <td>
-                          <span class="px-2 py-1 rounded-full text-xs font-medium"
-                                [ngClass]="{
-                                  'bg-green-500/20 text-green-400': txn.status === 'completed',
-                                  'bg-yellow-500/20 text-yellow-400': txn.status === 'pending',
-                                  'bg-red-500/20 text-red-400': txn.status === 'failed'
-                                }">
-                            {{ formatStatus(txn.status) }}
-                          </span>
-                        </td>
-                        <td class="text-white/70">{{ txn.details || '-' }}</td>
+                        <td class="py-4">{{ formatDateTime(game.timestamp) }}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -265,30 +306,51 @@
               
               <!-- Filter -->
               <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                <div class="relative flex-1">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <lucide-icon name="search" [size]="18" class="text-yellow-500/50"></lucide-icon>
+                  </div>
+                  <input 
+                    type="text" 
+                    [(ngModel)]="withdrawalSearch"
+                    (input)="onWithdrawalSearchChange($event)"
+                    class="w-full bg-black/50 border border-yellow-500/30 rounded-md p-2 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500/50"
+                    placeholder="Search by username or details"
+                  />
+                </div>
                 <select 
                   [(ngModel)]="withdrawalStatusFilter"
                   (change)="filterWithdrawals()"
                   class="bg-black/50 border border-yellow-500/30 rounded-md p-2 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500/50"
                 >
-                  <option value="all">All Statuses</option>
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
+                  <option [value]="'all'">All Statuses</option>
+                  <option [value]="'pending'">Pending</option>
+                  <option [value]="'approved'">Approved</option>
+                  <option [value]="'rejected'">Rejected</option>
                 </select>
               </div>
               
-              <!-- Pending Withdrawals -->
-              <div *ngIf="pendingWithdrawals.length > 0" class="mb-8">
-                <h3 class="text-lg font-medium text-yellow-300 mb-4">Pending Approval</h3>
-                
-                <div class="space-y-4">
-                  <div *ngFor="let withdrawal of pendingWithdrawals" class="bg-black/30 rounded-lg p-4 border border-yellow-500/10">
+              <!-- Withdrawal Requests List -->
+              <div>
+                <!-- Loading State -->
+                <div *ngIf="isLoading" class="flex justify-center items-center py-8">
+                  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
+                </div>
+
+                <!-- Withdrawal Requests -->
+                <div *ngIf="!isLoading && filteredWithdrawals.length > 0" class="space-y-6">
+                  <div *ngFor="let withdrawal of paginatedWithdrawals" class="bg-black/30 rounded-lg p-4 border border-yellow-500/10 hover:border-yellow-500/30 transition-colors">
                     <div class="flex flex-col sm:flex-row justify-between gap-4">
                       <div>
                         <div class="flex items-center gap-2 mb-2">
                           <span class="font-medium text-white">{{ withdrawal.username }}</span>
-                          <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400">
-                            Pending
+                          <span class="px-2 py-0.5 rounded-full text-xs font-medium"
+                                [ngClass]="{
+                                  'bg-green-500/20 text-green-400': withdrawal.status.toLowerCase() === 'approved',
+                                  'bg-yellow-500/20 text-yellow-400': withdrawal.status.toLowerCase() === 'pending',
+                                  'bg-red-500/20 text-red-400': withdrawal.status.toLowerCase() === 'rejected'
+                                }">
+                            {{ formatWithdrawalStatus(withdrawal.status) }}
                           </span>
                         </div>
                         <p class="text-lg font-bold text-white mb-1">₹{{ withdrawal.amount.toLocaleString() }}</p>
@@ -299,7 +361,7 @@
                           <span class="text-yellow-300">Details:</span> {{ withdrawal.details }}
                         </p>
                       </div>
-                      <div class="flex gap-2 sm:self-center">
+                      <div class="flex gap-2 sm:self-center" *ngIf="withdrawal.status.toLowerCase() === 'pending'">
                         <app-button
                           (onClick)="approveWithdrawal(withdrawal.id)"
                           className="bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-400/30"
@@ -319,52 +381,138 @@
                       </div>
                     </div>
                   </div>
+                  
+                  <!-- Pagination Controls -->
+                  <div class="mt-6 flex items-center justify-between">
+                    <div class="text-sm text-yellow-300">
+                      Showing {{ paginatedWithdrawals.length > 0 ? (withdrawalPageSize * (withdrawalCurrentPage - 1) + 1) : 0 }}-{{ paginatedWithdrawals.length > 0 ? Math.min(withdrawalPageSize * withdrawalCurrentPage, filteredWithdrawals.length) : 0 }} of {{ filteredWithdrawals.length }} requests
+                    </div>
+                    <div class="flex items-center gap-4">
+                      <button 
+                        (click)="goToPreviousWithdrawalPage()"
+                        [disabled]="withdrawalCurrentPage <= 1"
+                        class="px-3 py-1 rounded-md bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      <span class="text-yellow-300">Page {{ withdrawalCurrentPage }} of {{ withdrawalTotalPages }}</span>
+                      <button 
+                        (click)="goToNextWithdrawalPage()"
+                        [disabled]="withdrawalCurrentPage >= withdrawalTotalPages"
+                        class="px-3 py-1 rounded-md bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- No Results Message -->
+                <div *ngIf="!isLoading && filteredWithdrawals.length === 0" class="text-center py-8 text-white/50">
+                  <p>No withdrawal requests found matching your criteria</p>
+                </div>
+              </div>
+            </div>
+          </section>
+          
+          <!-- Deposits Section -->
+          <section *ngIf="activeSection === 'deposits'" class="mb-8">
+            <div class="bg-black/50 backdrop-blur-lg rounded-xl p-6 border border-green-500/30 shadow-neon-green">
+              <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-green-300">
+                <lucide-icon name="dollar-sign" [size]="20"></lucide-icon>
+                Deposits
+              </h2>
+              
+              <!-- Search -->
+              <div class="flex flex-col md:flex-row gap-4 mb-6">
+                <!-- Search Input -->
+                <div class="relative flex-1">
+                  <input
+                    type="text"
+                    class="w-full bg-black/30 border border-green-500/30 rounded-lg p-2 pl-10 text-white focus:outline-none focus:ring-1 focus:ring-green-500"
+                    placeholder="Search by username or deposit ID"
+                    [(ngModel)]="depositSearch"
+                    (input)="filterDeposits()"
+                  />
+                  <lucide-icon
+                    name="search"
+                    [size]="18"
+                    class="absolute left-1.5 top-1/2 transform -translate-y-1/2 text-green-300/60"
+                  ></lucide-icon>
                 </div>
               </div>
               
-              <!-- All Withdrawals Table -->
+              <!-- Deposits Table -->
               <div class="overflow-x-auto -mx-4 sm:mx-0">
                 <div class="min-w-[700px] px-4 sm:px-0">
-                  <table class="w-full">
+                  <!-- Loading State -->
+                  <div *ngIf="isLoadingDeposits" class="flex justify-center items-center py-8">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+                  </div>
+                  
+                  <!-- Deposits Table -->
+                  <table class="w-full" *ngIf="!isLoadingDeposits">
                     <thead>
-                      <tr class="text-yellow-300 text-sm">
-                        <th class="text-left pb-4">Date & Time</th>
-                        <th class="text-left pb-4">User</th>
+                      <tr class="text-green-300 text-sm">
+                        <th class="text-left pb-4">Player</th>
                         <th class="text-left pb-4">Amount</th>
-                        <th class="text-left pb-4">Method</th>
                         <th class="text-left pb-4">Status</th>
-                        <th class="text-left pb-4">Details</th>
+                        <th class="text-left pb-4">Method</th>
+                        <th class="text-left pb-4">Date & Time</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr 
-                        *ngFor="let withdrawal of filteredWithdrawals" 
-                        class="border-t border-yellow-500/10"
+                        *ngFor="let deposit of paginatedDeposits" 
+                        class="border-t border-green-500/10"
                       >
-                        <td class="py-4">{{ formatDateTime(withdrawal.timestamp) }}</td>
-                        <td>{{ withdrawal.username }}</td>
-                        <td>₹{{ withdrawal.amount.toLocaleString() }}</td>
-                        <td>{{ formatPaymentMethod(withdrawal.method) }}</td>
-                        <td>
+                        <td class="py-4">{{ deposit.username }}</td>
+                        <td class="py-4 text-green-400">+₹{{ deposit.amount.toLocaleString() }}</td>
+                        <td class="py-4">
                           <span class="px-2 py-1 rounded-full text-xs font-medium"
                                 [ngClass]="{
-                                  'bg-green-500/20 text-green-400': withdrawal.status === 'approved',
-                                  'bg-yellow-500/20 text-yellow-400': withdrawal.status === 'pending',
-                                  'bg-red-500/20 text-red-400': withdrawal.status === 'rejected'
+                                  'bg-green-500/20 text-green-400': deposit.status === 'completed',
+                                  'bg-yellow-500/20 text-yellow-400': deposit.status === 'pending',
+                                  'bg-red-500/20 text-red-400': deposit.status === 'failed'
                                 }">
-                            {{ formatWithdrawalStatus(withdrawal.status) }}
+                            {{ formatStatus(deposit.status) }}
                           </span>
                         </td>
-                        <td class="text-white/70">{{ withdrawal.details }}</td>
+                        <td class="py-4">{{ formatPaymentMethod(deposit.method || 'N/A') }}</td>
+                        <td class="py-4">{{ formatDateTime(deposit.timestamp) }}</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
               </div>
               
+              <!-- Pagination Controls -->
+              <div *ngIf="!isLoadingDeposits && deposits.length > 0" class="mt-6 flex items-center justify-between">
+                <div class="text-sm text-green-300">
+                  Showing {{ paginatedDeposits.length > 0 ? (depositPageSize * (depositCurrentPage - 1) + 1) : 0 }}-{{ paginatedDeposits.length > 0 ? Math.min(depositPageSize * depositCurrentPage, filteredDeposits.length) : 0 }} of {{ filteredDeposits.length }} deposits
+                </div>
+                <div class="flex items-center gap-4">
+                  <button 
+                    (click)="goToPreviousDepositPage()"
+                    [disabled]="depositCurrentPage <= 1"
+                    class="px-3 py-1 rounded-md bg-green-500/20 text-green-400 hover:bg-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <span class="text-green-300">Page {{ depositCurrentPage }} of {{ depositTotalPages }}</span>
+                  <button 
+                    (click)="goToNextDepositPage()"
+                    [disabled]="depositCurrentPage >= depositTotalPages"
+                    class="px-3 py-1 rounded-md bg-green-500/20 text-green-400 hover:bg-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+              
               <!-- No Results Message -->
-              <div *ngIf="filteredWithdrawals.length === 0" class="text-center py-8 text-white/50">
-                <p>No withdrawal requests found matching your criteria</p>
+              <div *ngIf="!isLoadingDeposits && deposits.length === 0" class="text-center py-8 text-green-300">
+                No deposit transactions found
               </div>
             </div>
           </section>
@@ -412,7 +560,7 @@
 
                 <!-- Users List -->
                 <div *ngIf="!isLoading && filteredUsers.length > 0">
-                  <div *ngFor="let user of filteredUsers" class="bg-black/30 rounded-lg p-4 border border-purple-500/10">
+                  <div *ngFor="let user of paginatedUsers" class="bg-black/30 rounded-lg p-4 border border-purple-500/10 mb-4">
                     <div class="flex flex-col sm:flex-row justify-between gap-4">
                       <div class="flex-1">
                         <!-- User Header -->
@@ -521,6 +669,30 @@
                 <!-- No Results Message -->
                 <div *ngIf="!isLoading && filteredUsers.length === 0" class="text-center py-8 text-white/50">
                   <p>No users found matching your criteria</p>
+                </div>
+
+                <!-- Pagination Controls -->
+                <div *ngIf="!isLoading && filteredUsers.length > 0" class="mt-6 flex items-center justify-between">
+                  <div class="text-sm text-purple-300">
+                    Showing {{ paginatedUsers.length > 0 ? (userPageSize * (userCurrentPage - 1) + 1) : 0 }}-{{ paginatedUsers.length > 0 ? Math.min(userPageSize * userCurrentPage, filteredUsers.length) : 0 }} of {{ filteredUsers.length }} users
+                  </div>
+                  <div class="flex items-center gap-4">
+                    <button 
+                      (click)="goToPreviousUserPage()"
+                      [disabled]="userCurrentPage <= 1"
+                      class="px-3 py-1 rounded-md bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <span class="text-purple-300">Page {{ userCurrentPage }} of {{ userTotalPages }}</span>
+                    <button 
+                      (click)="goToNextUserPage()"
+                      [disabled]="userCurrentPage >= userTotalPages"
+                      class="px-3 py-1 rounded-md bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

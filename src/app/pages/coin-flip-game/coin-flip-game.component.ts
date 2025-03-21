@@ -10,6 +10,7 @@ import { HeaderComponent } from '../../components/header/header.component';
 import { GameHistory } from '../../models/game-history.model';
 import { AuthService } from '../../services/auth.service';
 import { GameService } from '../../services/game.service';
+import { ProfileService } from '../../services/profile.service';
 import { User } from '../../models/user.model';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
@@ -32,7 +33,7 @@ import { environment } from '../../../environments/environment';
 export class CoinFlipGameComponent implements OnInit {
   username: string = '';
   balance: number = 0;
-  bet: number = 100;
+  bet: number = 500;
   isFlipping: boolean = false;
   result: string | null = null;
   history: GameHistory[] = [];
@@ -40,12 +41,15 @@ export class CoinFlipGameComponent implements OnInit {
   choice: string | null = null;
   latestWin: number | null = null;
   latestLoss: number | null = null;
-  betAmounts: number[] = [100, 1000, 5000, 10000];
+  betAmounts: number[] = [500, 2000, 5000, 10000];
   gameType: string = 'Coin Flip';
+  isAddingFunds: boolean = false;
+  fundAddError: string | null = null;
 
   constructor(
     private authService: AuthService,
     private gameService: GameService,
+    private profileService: ProfileService,
     private router: Router,
     private http: HttpClient,
     private ngZone: NgZone
@@ -162,9 +166,23 @@ export class CoinFlipGameComponent implements OnInit {
   }
 
   addFunds(amount: number): void {
-    this.balance += amount;
-    this.authService.updateUserBalance(amount);
-    this.showAddFunds = false;
+    if (this.isAddingFunds) return;
+    
+    this.isAddingFunds = true;
+    this.fundAddError = null;
+    
+    this.profileService.depositFunds(amount).subscribe({
+      next: (user) => {
+        this.balance = user.balance ?? 0;
+        this.isAddingFunds = false;
+        this.showAddFunds = false;
+      },
+      error: (error) => {
+        console.error('Failed to add funds:', error);
+        this.fundAddError = error.message || 'Failed to add funds. Please try again.';
+        this.isAddingFunds = false;
+      }
+    });
   }
 
   handleFlip(selectedChoice: string): void {

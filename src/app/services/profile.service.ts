@@ -377,4 +377,46 @@ export class ProfileService {
       this.authService.updateCurrentUser(userToStore);
     }
   }
+
+  // Add method to deposit funds
+  depositFunds(amount: number): Observable<User> {
+    const token = this.authService.getToken();
+    if (!token) {
+      return throwError(() => new Error('Authentication required'));
+    }
+
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    });
+
+    return this.http.post<any>(
+      `${this.apiUrl}/deposit`, 
+      { amount }, 
+      { headers }
+    ).pipe(
+      map(response => {
+        // Extract user data from response
+        const userData = response.user || response;
+        
+        // Map to User model
+        const user: User = {
+          username: userData.username,
+          balance: userData.balance,
+          role: userData.role,
+          id: userData.id?.toString(),
+          createdAt: userData.createdAt ? new Date(userData.createdAt) : undefined
+        };
+        
+        // Update stored user data
+        this.updateStoredUserData(user);
+        
+        return user;
+      }),
+      catchError(error => {
+        console.error('Deposit funds error:', error);
+        return throwError(() => new Error(error.error?.message || 'Failed to deposit funds'));
+      })
+    );
+  }
 } 

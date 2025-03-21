@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { LucideAngularModule, BarChart, Users, CreditCard, DollarSign, ArrowLeft, CheckCircle, XCircle, Search, AlertTriangle, Ban, UserCheck } from 'lucide-angular';
+import { LucideAngularModule, BarChart, Users, CreditCard, DollarSign, ArrowLeft, CheckCircle, XCircle, Search, AlertTriangle, Ban, UserCheck, Joystick } from 'lucide-angular';
 import { HeaderComponent } from '../../components/header/header.component';
 import { ButtonComponent } from '../../components/button/button.component';
 import { AdminService } from '../../services/admin.service';
@@ -24,7 +24,7 @@ import { GameStats, Transaction, WithdrawalRequest, UserManagement } from '../..
 })
 export class AdminDashboardComponent implements OnInit {
   username: string = '';
-  activeSection: 'stats' | 'transactions' | 'withdrawals' | 'users' = 'stats';
+  activeSection: 'stats' | 'transactions' | 'withdrawals' | 'users' | 'deposits' = 'stats';
   
   // Game Statistics
   gameStats: GameStats[] = [];
@@ -39,6 +39,8 @@ export class AdminDashboardComponent implements OnInit {
   paginatedTransactions: Transaction[] = [];
   transactionSearch: string = '';
   transactionTypeFilter: string = 'all';
+  betAmountFilter: number | null = null;
+  betAmountOptions: number[] = [];
   currentPage: number = 1;
   totalPages: number = 1;
   pageSize: number = 10;
@@ -48,14 +50,33 @@ export class AdminDashboardComponent implements OnInit {
   // Withdrawals
   withdrawalRequests: WithdrawalRequest[] = [];
   filteredWithdrawals: WithdrawalRequest[] = [];
+  paginatedWithdrawals: WithdrawalRequest[] = [];
   pendingWithdrawals: WithdrawalRequest[] = [];
-  withdrawalStatusFilter: string = 'all';
+  withdrawalStatusFilter: 'all' | 'pending' | 'approved' | 'rejected' = 'all';
+  withdrawalSearch: string = '';
+  withdrawalCurrentPage: number = 1;
+  withdrawalTotalPages: number = 1;
+  withdrawalPageSize: number = 5;
   
   // Users
   users: UserManagement[] = [];
   filteredUsers: UserManagement[] = [];
+  paginatedUsers: UserManagement[] = [];
   userSearch: string = '';
   userStatusFilter: string = 'all';
+  userCurrentPage: number = 1;
+  userTotalPages: number = 1;
+  userPageSize: number = 10;
+  
+  // Deposits
+  deposits: Transaction[] = [];
+  filteredDeposits: Transaction[] = [];
+  paginatedDeposits: Transaction[] = [];
+  depositSearch: string = '';
+  depositCurrentPage: number = 1;
+  depositTotalPages: number = 1;
+  depositPageSize: number = 10;
+  isLoadingDeposits: boolean = false;
   
   // For template use
   Math = Math;
@@ -99,7 +120,7 @@ export class AdminDashboardComponent implements OnInit {
     this.loadDataForSection(this.activeSection);
   }
   
-  private loadDataForSection(section: 'stats' | 'transactions' | 'withdrawals' | 'users'): void {
+  private loadDataForSection(section: 'stats' | 'transactions' | 'withdrawals' | 'users' | 'deposits'): void {
     console.log('Admin Dashboard: Loading data for section:', section);
     this.isLoading = true;
     this.error = null;
@@ -116,6 +137,9 @@ export class AdminDashboardComponent implements OnInit {
         break;
       case 'users':
         this.loadUsers();
+        break;
+      case 'deposits':
+        this.loadDeposits();
         break;
     }
   }
@@ -148,32 +172,91 @@ export class AdminDashboardComponent implements OnInit {
     this.isLoadingTransactions = true;
     this.adminService.getTransactions().subscribe({
       next: (transactions) => {
-        this.transactions = transactions;
-        this.totalTransactionsCount = transactions.length;
-        this.filterTransactions();
+        // Filter only game transactions and sort by timestamp (newest first)
+        this.transactions = transactions
+          .filter(t => typeof t.type === 'string' && t.type.toLowerCase() === 'game')
+          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        
+        console.log(`Loaded ${this.transactions.length} game transactions`);
+        
+        // Extract unique bet amounts for filter options
+        this.updateBetAmountOptions();
+        
+        this.filterGameTransactions();
         this.isLoadingTransactions = false;
         this.isLoading = false;
       },
       error: (error) => {
         console.error('Error loading transactions:', error);
-        this.error = 'Failed to load transactions. Please try again.';
+        this.error = 'Failed to load game transactions. Please try again.';
         this.isLoadingTransactions = false;
         this.isLoading = false;
       }
     });
   }
   
+  filterGameTransactions(): void {
+    // Apply search filter to game transactions
+    this.filteredTransactions = this.transactions.filter(game => {
+      // Filter by search term
+      const searchMatch = !this.transactionSearch || 
+        game.username.toLowerCase().includes(this.transactionSearch.toLowerCase()) ||
+        String(game.id).toLowerCase().includes(this.transactionSearch.toLowerCase()) ||
+        (game.details || '').toLowerCase().includes(this.transactionSearch.toLowerCase());
+      
+      // Filter by bet amount if specified
+      const betAmountMatch = this.betAmountFilter === null || 
+        Math.abs(game.amount) === this.betAmountFilter;
+      
+      return searchMatch && betAmountMatch;
+    });
+    
+    // Update total pages based on filtered results
+    this.totalPages = Math.max(1, Math.ceil(this.filteredTransactions.length / this.pageSize));
+    
+    // Reset to first page when filters change
+    this.currentPage = 1;
+    
+    // Apply pagination
+    this.applyPagination();
+  }
+  
   loadWithdrawals(): void {
-    this.adminService.getWithdrawalRequests().subscribe({
+    console.log('Loading withdrawals - Current search term:', this.withdrawalSearch);
+    this.isLoading = true;
+    this.error = null;
+    
+    // Only select status filter from server if not using search term
+    const status = (this.withdrawalStatusFilter === 'all' || this.withdrawalSearch) ? undefined : this.withdrawalStatusFilter;
+    console.log('Making request with status:', status);
+    
+    this.adminService.getWithdrawalRequests(status).subscribe({
       next: (requests) => {
+        console.log('Received withdrawal requests:', requests.length);
+        
+        // Store the original search term before processing
+        const searchTerm = this.withdrawalSearch;
+        
         this.withdrawalRequests = requests;
+        
+        // If we had a search term, make sure it's preserved
+        if (searchTerm) {
+          this.withdrawalSearch = searchTerm;
+          console.log('Preserving search term after loading:', this.withdrawalSearch);
+        }
+        
+        // Apply filters with the preserved search term
         this.filterWithdrawals();
-        this.pendingWithdrawals = this.withdrawalRequests.filter(w => w.status === 'pending');
+        
+        this.pendingWithdrawals = requests.filter(w => {
+          return w.status.toLowerCase() === 'pending';
+        });
+        
         this.isLoading = false;
       },
       error: (error) => {
         console.error('Error loading withdrawals:', error);
-        this.error = 'Failed to load withdrawal requests. Please try again.';
+        this.error = error.message || 'Failed to load withdrawal requests. Please try again.';
         this.isLoading = false;
       }
     });
@@ -202,10 +285,12 @@ export class AdminDashboardComponent implements OnInit {
           this.error = 'Invalid data received from server';
           this.users = [];
           this.filteredUsers = [];
+          this.paginatedUsers = [];
         } else if (users.length === 0) {
           console.log('Admin Dashboard: No users found');
           this.users = [];
           this.filteredUsers = [];
+          this.paginatedUsers = [];
         } else {
           console.log('Admin Dashboard: Processing users data:', users);
           // Ensure all required fields are present and properly formatted
@@ -234,10 +319,15 @@ export class AdminDashboardComponent implements OnInit {
             return formattedUser;
           });
           
-          // Initialize filtered users with all users
+          // Initialize filtered users with all users and set up pagination
           this.filteredUsers = [...this.users];
+          this.userTotalPages = Math.max(1, Math.ceil(this.filteredUsers.length / this.userPageSize));
+          this.userCurrentPage = 1;
+          this.updatePaginatedUsers();
+          
           console.log('Admin Dashboard: Processed users:', this.users);
           console.log('Admin Dashboard: Filtered users:', this.filteredUsers);
+          console.log('Admin Dashboard: Paginated users:', this.paginatedUsers);
         }
         this.isLoading = false;
       },
@@ -246,24 +336,106 @@ export class AdminDashboardComponent implements OnInit {
         this.error = error.message || 'Failed to load users. Please try again.';
         this.users = [];
         this.filteredUsers = [];
+        this.paginatedUsers = [];
         this.isLoading = false;
       }
     });
   }
   
+  loadDeposits(): void {
+    this.isLoadingDeposits = true;
+    this.adminService.getDeposits().subscribe({
+      next: (deposits) => {
+        // Sort deposit transactions by timestamp (newest first)
+        this.deposits = deposits.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        
+        console.log(`Loaded ${this.deposits.length} deposit transactions`);
+        
+        this.filterDeposits();
+        this.isLoadingDeposits = false;
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading deposits:', error);
+        this.error = 'Failed to load deposit transactions. Please try again.';
+        this.isLoadingDeposits = false;
+        this.isLoading = false;
+      }
+    });
+  }
+  
+  filterDeposits(): void {
+    // Apply search filter to deposit transactions
+    this.filteredDeposits = this.deposits.filter(deposit => {
+      // Filter by search term
+      const searchMatch = !this.depositSearch || 
+        deposit.username.toLowerCase().includes(this.depositSearch.toLowerCase()) ||
+        String(deposit.id).toLowerCase().includes(this.depositSearch.toLowerCase()) ||
+        (deposit.details || '').toLowerCase().includes(this.depositSearch.toLowerCase());
+      
+      return searchMatch;
+    });
+    
+    // Update total pages based on filtered results
+    this.depositTotalPages = Math.max(1, Math.ceil(this.filteredDeposits.length / this.depositPageSize));
+    
+    // Reset to first page when filters change
+    this.depositCurrentPage = 1;
+    
+    // Apply pagination
+    this.applyDepositPagination();
+  }
+  
+  applyDepositPagination(): void {
+    const startIndex = (this.depositCurrentPage - 1) * this.depositPageSize;
+    const endIndex = startIndex + this.depositPageSize;
+    this.paginatedDeposits = this.filteredDeposits.slice(startIndex, endIndex);
+  }
+  
+  goToPreviousDepositPage(): void {
+    if (this.depositCurrentPage > 1) {
+      this.depositCurrentPage--;
+      this.applyDepositPagination();
+    }
+  }
+  
+  goToNextDepositPage(): void {
+    if (this.depositCurrentPage < this.depositTotalPages) {
+      this.depositCurrentPage++;
+      this.applyDepositPagination();
+    }
+  }
+  
   filterTransactions(): void {
+    // Log all transaction types to debug
+    console.log('Available transaction types:');
+    const uniqueTypes = [...new Set(this.transactions.map(t => t.type))];
+    console.log(uniqueTypes);
+    
     // First apply filters to the full dataset
     this.filteredTransactions = this.transactions.filter(txn => {
       // Filter by search term
       const searchMatch = !this.transactionSearch || 
         txn.username.toLowerCase().includes(this.transactionSearch.toLowerCase()) ||
-        txn.id.toLowerCase().includes(this.transactionSearch.toLowerCase());
+        String(txn.id).toLowerCase().includes(this.transactionSearch.toLowerCase());
       
-      // Filter by transaction type
-      const typeMatch = this.transactionTypeFilter === 'all' || txn.type === this.transactionTypeFilter;
+      // Filter by transaction type (case insensitive)
+      const txnType = txn.type?.toLowerCase() || '';
+      const filterType = this.transactionTypeFilter.toLowerCase();
+      const typeMatch = this.transactionTypeFilter === 'all' || txnType === filterType;
+      
+      // Log withdrawal filtering when that type is selected
+      if (this.transactionTypeFilter === 'withdrawal') {
+        console.log(`Transaction type: "${txn.type}" - matches filter: ${typeMatch}`);
+      }
       
       return searchMatch && typeMatch;
     });
+    
+    // Log filtered results
+    if (this.transactionTypeFilter === 'withdrawal') {
+      console.log(`Filtered to ${this.filteredTransactions.length} withdrawal transactions`);
+    }
     
     // Update total pages based on filtered results
     this.totalPages = Math.max(1, Math.ceil(this.filteredTransactions.length / this.pageSize));
@@ -276,9 +448,73 @@ export class AdminDashboardComponent implements OnInit {
   }
   
   filterWithdrawals(): void {
-    this.filteredWithdrawals = this.withdrawalRequests.filter(withdrawal => {
-      return this.withdrawalStatusFilter === 'all' || withdrawal.status === this.withdrawalStatusFilter;
+    console.log('Filtering withdrawals - Search term:', this.withdrawalSearch, 'Status filter:', this.withdrawalStatusFilter);
+    console.log('Total withdrawal requests before filtering:', this.withdrawalRequests.length);
+    
+    // First apply filters to the full dataset
+    this.filteredWithdrawals = this.withdrawalRequests.filter(request => {
+      // Convert search term to lowercase for case-insensitive comparison
+      const searchTerm = this.withdrawalSearch?.toLowerCase() || '';
+      
+      // Convert all searchable fields to lowercase
+      const username = request.username?.toLowerCase() || '';
+      const id = String(request.id).toLowerCase();
+      const details = request.details?.toLowerCase() || '';
+      
+      // Filter by search term
+      const searchMatch = !searchTerm || 
+                         username.includes(searchTerm) || 
+                         id.includes(searchTerm) || 
+                         details.includes(searchTerm);
+      
+      // Filter by status
+      const statusMatch = this.withdrawalStatusFilter === 'all' || 
+                         request.status.toLowerCase() === this.withdrawalStatusFilter;
+      
+      // For debugging
+      if (searchTerm && username.includes(searchTerm)) {
+        console.log('Username match found:', username, 'Search term:', searchTerm);
+      }
+      
+      const result = searchMatch && statusMatch;
+      
+      // Log each item's matching result for debugging
+      if (searchTerm) {
+        console.log(`Withdrawal by ${username} - Search match: ${searchMatch}, Status match: ${statusMatch}, Final result: ${result}`);
+      }
+      
+      return result;
     });
+    
+    console.log('Filtered withdrawals count after filtering:', this.filteredWithdrawals.length);
+    
+    // Apply pagination
+    this.withdrawalTotalPages = Math.max(1, Math.ceil(this.filteredWithdrawals.length / this.withdrawalPageSize));
+    this.withdrawalCurrentPage = 1; // Reset to first page when filter changes
+    this.updatePaginatedWithdrawals();
+    
+    console.log('Paginated withdrawals count:', this.paginatedWithdrawals.length);
+    console.log('Current page:', this.withdrawalCurrentPage, 'Total pages:', this.withdrawalTotalPages);
+  }
+  
+  updatePaginatedWithdrawals(): void {
+    const startIndex = (this.withdrawalCurrentPage - 1) * this.withdrawalPageSize;
+    const endIndex = startIndex + this.withdrawalPageSize;
+    this.paginatedWithdrawals = this.filteredWithdrawals.slice(startIndex, endIndex);
+  }
+  
+  goToPreviousWithdrawalPage(): void {
+    if (this.withdrawalCurrentPage > 1) {
+      this.withdrawalCurrentPage--;
+      this.updatePaginatedWithdrawals();
+    }
+  }
+  
+  goToNextWithdrawalPage(): void {
+    if (this.withdrawalCurrentPage < this.withdrawalTotalPages) {
+      this.withdrawalCurrentPage++;
+      this.updatePaginatedWithdrawals();
+    }
   }
   
   filterUsers(): void {
@@ -289,6 +525,7 @@ export class AdminDashboardComponent implements OnInit {
     if (!this.users || this.users.length === 0) {
       console.log('Admin Dashboard: No users to filter');
       this.filteredUsers = [];
+      this.paginatedUsers = [];
       return;
     }
     
@@ -311,31 +548,77 @@ export class AdminDashboardComponent implements OnInit {
       this.error = null;
     }
     
+    // Apply pagination
+    this.userTotalPages = Math.max(1, Math.ceil(this.filteredUsers.length / this.userPageSize));
+    this.userCurrentPage = 1; // Reset to first page when filter changes
+    this.updatePaginatedUsers();
+    
     console.log('Admin Dashboard: Filtered users result:', this.filteredUsers);
+    console.log('Admin Dashboard: Paginated users:', this.paginatedUsers);
+  }
+  
+  updatePaginatedUsers(): void {
+    const startIndex = (this.userCurrentPage - 1) * this.userPageSize;
+    const endIndex = startIndex + this.userPageSize;
+    this.paginatedUsers = this.filteredUsers.slice(startIndex, endIndex);
+  }
+  
+  goToPreviousUserPage(): void {
+    if (this.userCurrentPage > 1) {  
+      this.userCurrentPage--;
+      this.updatePaginatedUsers();
+    }
+  }
+  
+  goToNextUserPage(): void {
+    if (this.userCurrentPage < this.userTotalPages) {
+      this.userCurrentPage++;
+      this.updatePaginatedUsers();
+    }
   }
   
   approveWithdrawal(id: string): void {
-    if (this.adminService.approveWithdrawal(id)) {
-      // Update local data
-      const index = this.withdrawalRequests.findIndex(w => w.id === id);
-      if (index !== -1) {
-        this.withdrawalRequests[index].status = 'approved';
-        this.filterWithdrawals();
-        this.pendingWithdrawals = this.pendingWithdrawals.filter(w => w.id !== id);
+    this.isLoading = true;
+    this.error = null;
+    this.adminService.approveWithdrawal(id).subscribe({
+      next: () => {
+        // Update local data
+        const index = this.withdrawalRequests.findIndex(w => w.id === id);
+        if (index !== -1) {
+          this.withdrawalRequests[index].status = 'approved';
+          this.filterWithdrawals();
+          this.pendingWithdrawals = this.pendingWithdrawals.filter(w => w.id !== id);
+        }
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error approving withdrawal:', error);
+        this.error = error.message || 'Failed to approve withdrawal request. Please try again.';
+        this.isLoading = false;
       }
-    }
+    });
   }
   
   rejectWithdrawal(id: string): void {
-    if (this.adminService.rejectWithdrawal(id)) {
-      // Update local data
-      const index = this.withdrawalRequests.findIndex(w => w.id === id);
-      if (index !== -1) {
-        this.withdrawalRequests[index].status = 'rejected';
-        this.filterWithdrawals();
-        this.pendingWithdrawals = this.pendingWithdrawals.filter(w => w.id !== id);
+    this.isLoading = true;
+    this.error = null;
+    this.adminService.rejectWithdrawal(id).subscribe({
+      next: () => {
+        // Update local data
+        const index = this.withdrawalRequests.findIndex(w => w.id === id);
+        if (index !== -1) {
+          this.withdrawalRequests[index].status = 'rejected';
+          this.filterWithdrawals();
+          this.pendingWithdrawals = this.pendingWithdrawals.filter(w => w.id !== id);
+        }
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error rejecting withdrawal:', error);
+        this.error = error.message || 'Failed to reject withdrawal request. Please try again.';
+        this.isLoading = false;
       }
-    }
+    });
   }
   
   updateUserStatus(userId: string, status: 'active' | 'suspended' | 'blocked'): void {
@@ -369,8 +652,20 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
   
-  setActiveSection(section: 'stats' | 'transactions' | 'withdrawals' | 'users'): void {
+  setActiveSection(section: 'stats' | 'transactions' | 'withdrawals' | 'users' | 'deposits'): void {
     this.activeSection = section;
+    
+    // Clear search terms when switching sections
+    if (section === 'withdrawals') {
+      this.withdrawalSearch = '';
+    } else if (section === 'transactions') {
+      this.transactionSearch = '';
+    } else if (section === 'users') {
+      this.userSearch = '';
+    } else if (section === 'deposits') {
+      this.depositSearch = '';
+    }
+    
     this.loadDataForSection(section);
   }
   
@@ -467,5 +762,31 @@ export class AdminDashboardComponent implements OnInit {
       this.currentPage = prevPage;
       this.applyPagination();
     }
+  }
+
+  onWithdrawalSearchChange(event: any): void {
+    console.log('Search input changed:', event.target.value);
+    this.withdrawalSearch = event.target.value;
+    
+    // Only filter existing data, don't reload from API
+    if (this.withdrawalRequests && this.withdrawalRequests.length > 0) {
+      this.filterWithdrawals();
+    }
+  }
+
+  // Extract unique bet amounts from transactions
+  updateBetAmountOptions(): void {
+    // Use a Set to collect unique absolute amounts
+    const uniqueAmounts = new Set<number>();
+    
+    // Add each unique absolute amount to the set
+    this.transactions.forEach(game => {
+      uniqueAmounts.add(Math.abs(game.amount));
+    });
+    
+    // Convert set to array and sort in ascending order
+    this.betAmountOptions = Array.from(uniqueAmounts).sort((a, b) => a - b);
+    
+    console.log('Available bet amounts:', this.betAmountOptions);
   }
 }

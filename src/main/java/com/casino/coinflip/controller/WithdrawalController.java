@@ -20,23 +20,23 @@ public class WithdrawalController {
         this.withdrawalService = withdrawalService;
     }
 
-    @PostMapping
+    @PostMapping("/request")
     public ResponseEntity<WithdrawalRequest> createWithdrawalRequest(
             @AuthenticationPrincipal User user,
             @Valid @RequestBody WithdrawalRequestDto request) {
         WithdrawalRequest withdrawalRequest = withdrawalService.createWithdrawalRequest(
             user,
             request.getAmount(),
-            WithdrawalRequest.PaymentMethod.valueOf(request.getMethod().toUpperCase()),
+            request.getMethod(),
             request.getDetails()
         );
         return ResponseEntity.ok(withdrawalRequest);
     }
 
-    @GetMapping
-    public ResponseEntity<List<WithdrawalRequest>> getWithdrawalHistory(
+    @GetMapping("/history")
+    public ResponseEntity<List<WithdrawalRequestDto>> getWithdrawalHistory(
             @AuthenticationPrincipal User user) {
-        List<WithdrawalRequest> history = withdrawalService.getWithdrawalHistory(user.getId());
+        List<WithdrawalRequestDto> history = withdrawalService.getWithdrawalHistory(user.getId());
         return ResponseEntity.ok(history);
     }
 }

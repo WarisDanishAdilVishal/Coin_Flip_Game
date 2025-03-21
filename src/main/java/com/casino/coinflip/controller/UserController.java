@@ -5,14 +5,14 @@ import com.casino.coinflip.entity.Game;
 import com.casino.coinflip.entity.User;
 import com.casino.coinflip.service.GameService;
 import com.casino.coinflip.service.UserService;
+import com.casino.coinflip.service.TransactionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/user")
@@ -20,10 +20,12 @@ public class UserController {
     
     private final GameService gameService;
     private final UserService userService;
+    private final TransactionService transactionService;
     
-    public UserController(GameService gameService, UserService userService) {
+    public UserController(GameService gameService, UserService userService, TransactionService transactionService) {
         this.gameService = gameService;
         this.userService = userService;
+        this.transactionService = transactionService;
     }
 
     @GetMapping("/profile")
@@ -109,6 +111,45 @@ public class UserController {
             System.err.println("Error fetching detailed profile for user " + user.getUsername() + ": " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(500).build();
+        }
+    }
+
+    @PostMapping("/deposit")
+    public ResponseEntity<?> createDeposit(@AuthenticationPrincipal User user, @RequestBody Map<String, Object> depositRequest) {
+        if (user == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
+        }
+        
+        try {
+            // Extract deposit amount from request
+            BigDecimal amount;
+            try {
+                amount = new BigDecimal(depositRequest.get("amount").toString());
+                if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Deposit amount must be greater than zero"));
+                }
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid deposit amount"));
+            }
+            
+            // Create deposit transaction
+            transactionService.createDepositTransaction(user, amount, "Online", "Online deposit from game page");
+            
+            // Update user balance
+            userService.updateBalance(user, amount);
+            
+            // Return updated user profile
+            UserProfileResponse response = new UserProfileResponse(
+                user.getUsername(),
+                user.getBalance(),
+                user.getRoles().stream().findFirst().orElse("ROLE_USER"),
+                user.getId(),
+                user.getCreatedAt()
+            );
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Error processing deposit: " + e.getMessage()));
         }
     }
 } 

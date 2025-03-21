@@ -1,44 +1,86 @@
 package com.casino.coinflip.dto;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import com.casino.coinflip.entity.WithdrawalRequest;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public class WithdrawalRequestDto {
-    @NotNull(message = "Amount is required")
-    @Min(value = 100, message = "Minimum withdrawal amount is 100")
+    private Long id;
+    private String username;
     private BigDecimal amount;
-
-    @NotBlank(message = "Payment method is required")
-    private String method;
-
-    @NotBlank(message = "Payment details are required")
+    private WithdrawalRequest.PaymentMethod method;
     private String details;
-    
+    private WithdrawalRequest.WithdrawalStatus status;
+    private LocalDateTime timestamp;
+
+    // Default constructor for Jackson
+    public WithdrawalRequestDto() {}
+
+    public WithdrawalRequestDto(WithdrawalRequest request) {
+        this.id = request.getId();
+        this.username = request.getUser().getUsername();
+        this.amount = request.getAmount();
+        this.method = request.getMethod();
+        this.details = request.getDetails();
+        this.status = request.getStatus();
+        this.timestamp = request.getTimestamp();
+    }
+
     // Getters
+    public Long getId() {
+        return id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
     public BigDecimal getAmount() {
         return amount;
     }
-    
-    public String getMethod() {
+
+    public WithdrawalRequest.PaymentMethod getMethod() {
         return method;
     }
-    
+
     public String getDetails() {
         return details;
     }
-    
-    // Setters
+
+    public WithdrawalRequest.WithdrawalStatus getStatus() {
+        return status;
+    }
+
+    public LocalDateTime getTimestamp() {
+        return timestamp;
+    }
+
+    // Setters for Jackson
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
-    
-    public void setMethod(String method) {
+
+    public void setMethod(WithdrawalRequest.PaymentMethod method) {
         this.method = method;
     }
-    
+
     public void setDetails(String details) {
         this.details = details;
+    }
+
+    public void setStatus(WithdrawalRequest.WithdrawalStatus status) {
+        this.status = status;
+    }
+
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
     }
 }

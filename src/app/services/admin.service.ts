@@ -29,11 +29,12 @@ export class AdminService {
   private handleError(error: HttpErrorResponse): Observable<never> {
     console.error('Admin Service Error:', error);
     if (error.status === 401) {
-      // Unauthorized - clear token and redirect to login
-      localStorage.removeItem('token');
-      localStorage.removeItem('currentUser');
-      window.location.href = '/login';
+      // Unauthorized - let the auth service handle the logout
+      this.authService.logout();
       return throwError(() => new Error('Unauthorized access'));
+    } else if (error.status === 403) {
+      // Forbidden - user doesn't have required permissions
+      return throwError(() => new Error('You do not have permission to access this resource'));
     }
     return throwError(() => new Error(error.error?.message || 'An error occurred'));
   }
@@ -51,15 +52,37 @@ export class AdminService {
     const headers = this.getHeaders();
     console.log('Making request to /admin/transactions with Authorization header:', headers.has('Authorization'));
     return this.http.get<Transaction[]>(`${this.apiUrl}/transactions`, { headers }).pipe(
-      tap(data => console.log('Received transactions:', data)),
+      tap(data => {
+        console.log('Received transactions:', data);
+        // Log transaction types for debugging
+        const types = data.map(t => t.type);
+        console.log('Transaction types in raw data:', types);
+        const withdrawals = data.filter(t => 
+          typeof t.type === 'string' && t.type.toLowerCase() === 'withdrawal'
+        );
+        console.log('Withdrawal transactions found:', withdrawals.length);
+      }),
       catchError(this.handleError)
     );
   }
 
-  getWithdrawalRequests(): Observable<WithdrawalRequest[]> {
+  getDeposits(): Observable<Transaction[]> {
     const headers = this.getHeaders();
-    console.log('Making request to /admin/withdrawals with Authorization header:', headers.has('Authorization'));
-    return this.http.get<WithdrawalRequest[]>(`${this.apiUrl}/withdrawals`, { headers }).pipe(
+    console.log('Making request to /admin/deposits with Authorization header:', headers.has('Authorization'));
+    return this.http.get<Transaction[]>(`${this.apiUrl}/deposits`, { headers }).pipe(
+      tap(data => {
+        console.log('Received deposit transactions:', data);
+        console.log('Number of deposits found:', data.length);
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  getWithdrawalRequests(status?: 'pending' | 'approved' | 'rejected'): Observable<WithdrawalRequest[]> {
+    const headers = this.getHeaders();
+    const url = status ? `${this.apiUrl}/withdrawals?status=${status.toUpperCase()}` : `${this.apiUrl}/withdrawals`;
+    console.log('Making request to:', url, 'with Authorization header:', headers.has('Authorization'));
+    return this.http.get<WithdrawalRequest[]>(url, { headers }).pipe(
       tap(data => console.log('Received withdrawal requests:', data)),
       catchError(this.handleError)
     );

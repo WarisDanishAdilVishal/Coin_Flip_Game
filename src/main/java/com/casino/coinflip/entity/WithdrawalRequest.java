@@ -1,11 +1,17 @@
 package com.casino.coinflip.entity;
 
+import com.casino.coinflip.config.PaymentMethodDeserializer;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.deser.std.StringDeserializer;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "withdrawal_requests")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class WithdrawalRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -13,6 +19,7 @@ public class WithdrawalRequest {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"password", "role"}) // Exclude sensitive user data
     private User user;
 
     @Column(nullable = false)
@@ -20,6 +27,7 @@ public class WithdrawalRequest {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @JsonDeserialize(using = PaymentMethodDeserializer.class)
     private PaymentMethod method;
 
     @Column(nullable = false)
@@ -33,7 +41,7 @@ public class WithdrawalRequest {
     private LocalDateTime timestamp = LocalDateTime.now();
 
     public enum PaymentMethod {
-        UPI, BANK_TRANSFER, PAYTM
+        UPI
     }
 
     public enum WithdrawalStatus {
