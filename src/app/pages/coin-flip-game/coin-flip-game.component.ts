@@ -193,9 +193,6 @@ export class CoinFlipGameComponent implements OnInit {
     this.latestWin = null;
     this.latestLoss = null;
     
-    // Deduct bet amount from balance immediately for UI feedback
-    this.balance -= this.bet;
-    
     // Call the game service to play the game
     this.gameService.playGame(this.bet, selectedChoice).subscribe({
       next: (gameResult) => {
@@ -206,25 +203,32 @@ export class CoinFlipGameComponent implements OnInit {
           
           if (gameResult.won) {
             this.latestWin = gameResult.winAmount;
-            // Update balance with winnings
-            this.balance += gameResult.winAmount;
           } else {
             this.latestLoss = this.bet;
-            // Balance already deducted
           }
           
-          // Update user in auth service
-          const currentUser = this.authService.getCurrentUser();
-          if (currentUser) {
-            const updatedUser: User = {
-              username: currentUser.username,
-              balance: this.balance,
-              role: currentUser.role,
-              id: currentUser.id,
-              createdAt: currentUser.createdAt
-            };
-            this.authService.updateCurrentUser(updatedUser);
-          }
+          // Refresh user data from backend to get the correct balance
+          this.authService.refreshCurrentUser().subscribe({
+            next: (user) => {
+              if (user) {
+                console.log('User data refreshed after game:', user);
+                this.balance = user.balance ?? 0;
+                
+                // Update user in auth service with the new balance
+                const currentUser = this.authService.getCurrentUser();
+                if (currentUser) {
+                  const updatedUser: User = {
+                    ...currentUser,
+                    balance: this.balance
+                  };
+                  this.authService.updateCurrentUser(updatedUser);
+                }
+              }
+            },
+            error: (error) => {
+              console.error('Failed to refresh user data after game:', error);
+            }
+          });
           
           // Add new game to history and maintain the 10 item limit
           this.history.unshift(gameResult);
@@ -240,8 +244,6 @@ export class CoinFlipGameComponent implements OnInit {
       },
       error: (error) => {
         console.error('Game API call failed:', error);
-        // Refund bet amount on error
-        this.balance += this.bet;
         this.isFlipping = false;
       }
     });
