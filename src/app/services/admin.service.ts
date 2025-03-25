@@ -187,7 +187,15 @@ export class AdminService {
   isAdmin(username: string): boolean {
     const currentUser = this.authService.getCurrentUser();
     console.log('Checking if user is admin:', currentUser);
-    // Check if the user has ROLE_ADMIN
-    return currentUser?.role === 'ROLE_ADMIN';
+    
+    // Check if the user has ROLE_ADMIN in their roles
+    if (currentUser?.roles && Array.isArray(currentUser.roles)) {
+      return currentUser.roles.includes('ROLE_ADMIN');
+    } else if (typeof currentUser?.role === 'string') {
+      // Fallback for single role stored as string
+      return currentUser.role === 'ROLE_ADMIN';
+    }
+    
+    return false;
   }
 }

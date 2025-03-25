@@ -5,6 +5,7 @@ export interface User {
   balance?: number;
   createdAt?: Date;
   role?: string;
+  roles?: string[];  // Array of roles
   
   // Game statistics fields (explicitly defined as numbers)
   email?: string;

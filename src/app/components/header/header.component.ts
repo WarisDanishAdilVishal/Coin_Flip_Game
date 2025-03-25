@@ -4,6 +4,7 @@ import { Router, RouterModule } from '@angular/router';
 import { LucideAngularModule, User, LogOut, Coins, ShieldAlert } from 'lucide-angular';
 import { ButtonComponent } from '../button/button.component';
 import { AuthService } from '../../services/auth.service';
+import { AdminService } from '../../services/admin.service';
 
 @Component({
   selector: 'app-header',
@@ -67,7 +68,8 @@ export class HeaderComponent {
   
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private adminService: AdminService
   ) {}
   
   logout(): void {
@@ -81,6 +83,6 @@ export class HeaderComponent {
   
   isAdmin(): boolean {
     const currentUser = this.authService.getCurrentUser();
-    return currentUser?.role === 'ROLE_ADMIN';
+    return currentUser ? this.adminService.isAdmin(currentUser.username) : false;
   }
 }

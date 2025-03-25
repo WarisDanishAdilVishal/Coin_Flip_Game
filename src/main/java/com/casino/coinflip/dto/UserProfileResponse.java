@@ -2,11 +2,13 @@ package com.casino.coinflip.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class UserProfileResponse {
     private String username;
     private BigDecimal balance;
     private String role;
+    private List<String> roles;
     private Long id;
     private LocalDateTime createdAt;
     // Added new fields for detailed profile
@@ -24,10 +26,11 @@ public class UserProfileResponse {
     }
 
     // Constructor with all fields
-    public UserProfileResponse(String username, BigDecimal balance, String role, Long id, LocalDateTime createdAt) {
+    public UserProfileResponse(String username, BigDecimal balance, String role, List<String> roles, Long id, LocalDateTime createdAt) {
         this.username = username;
         this.balance = balance;
         this.role = role;
+        this.roles = roles;
         this.id = id;
         this.createdAt = createdAt;
     }
@@ -36,7 +39,8 @@ public class UserProfileResponse {
     public UserProfileResponse(
             String username, 
             BigDecimal balance, 
-            String role, 
+            String role,
+            List<String> roles,
             Long id, 
             LocalDateTime createdAt,
             String email,
@@ -50,6 +54,7 @@ public class UserProfileResponse {
         this.username = username;
         this.balance = balance;
         this.role = role;
+        this.roles = roles;
         this.id = id;
         this.createdAt = createdAt;
         this.email = email;
@@ -85,6 +90,14 @@ public class UserProfileResponse {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public List<String> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(List<String> roles) {
+        this.roles = roles;
     }
 
     public Long getId() {

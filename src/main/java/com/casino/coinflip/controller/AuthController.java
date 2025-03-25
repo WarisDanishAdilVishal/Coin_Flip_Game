@@ -21,6 +21,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -49,9 +50,10 @@ public class AuthController {
             User user = userService.createUser(request.getUsername(), request.getPassword());
             UserDetails userDetails = CustomUserDetailsService.createUserDetails(user);
             String token = jwtService.generateToken(userDetails);
+            String primaryRole = user.getRoles().stream().findFirst().orElse("ROLE_USER");
             
             logger.info("User registered successfully: {}", request.getUsername());
-            return ResponseEntity.ok(new AuthResponse(token, user.getUsername(), "ROLE_USER"));
+            return ResponseEntity.ok(new AuthResponse(token, user.getUsername(), primaryRole, new ArrayList<>(user.getRoles())));
         } catch (Exception e) {
             logger.error("Registration failed: {}", e.getMessage(), e);
             Map<String, String> errorResponse = new HashMap<>();
@@ -80,10 +82,10 @@ public class AuthController {
                     .orElseThrow(() -> new RuntimeException("User not found"));
             
             String token = jwtService.generateToken(userDetails);
-            String role = user.getRoles().stream().findFirst().orElse("ROLE_USER");
+            String primaryRole = user.getRoles().stream().findFirst().orElse("ROLE_USER");
             
             logger.info("JWT token generated successfully for user: {}", userDetails.getUsername());
-            return ResponseEntity.ok(new AuthResponse(token, user.getUsername(), role));
+            return ResponseEntity.ok(new AuthResponse(token, user.getUsername(), primaryRole, new ArrayList<>(user.getRoles())));
         } catch (BadCredentialsException e) {
             logger.error("Bad credentials: {}", e.getMessage());
             Map<String, String> errorResponse = new HashMap<>();

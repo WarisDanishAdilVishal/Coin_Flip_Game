@@ -11,6 +11,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -34,11 +35,14 @@ public class UserController {
             return ResponseEntity.badRequest().build();
         }
         
+        String primaryRole = user.getRoles().stream().findFirst().orElse("ROLE_USER");
+        
         // Use the simple constructor for basic profile information
         UserProfileResponse response = new UserProfileResponse(
             user.getUsername(),
             user.getBalance(),
-            user.getRoles().stream().findFirst().orElse("ROLE_USER"),
+            primaryRole,
+            new ArrayList<>(user.getRoles()),
             user.getId(),
             user.getCreatedAt()
         );
@@ -89,11 +93,14 @@ public class UserController {
                                ", Earnings: " + lifetimeEarnings + 
                                ", Highest win: " + highestWin);
             
+            String primaryRole = user.getRoles().stream().findFirst().orElse("ROLE_USER");
+            
             // Create detailed response
             UserProfileResponse detailedResponse = new UserProfileResponse(
                 user.getUsername(),
                 user.getBalance(),
-                user.getRoles().stream().findFirst().orElse("ROLE_USER"),
+                primaryRole,
+                new ArrayList<>(user.getRoles()),
                 user.getId(),
                 user.getCreatedAt(),
                 user.getUsername() + "@example.com", // Placeholder email (you might want to add email to User entity)

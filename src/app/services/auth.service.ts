@@ -10,6 +10,7 @@ interface AuthResponse {
   username: string;
   balance: number;
   role: string;
+  roles?: string[];  // Add roles array
 }
 
 // Add a new interface for the user profile API response
@@ -17,6 +18,7 @@ interface UserProfileResponse {
   username: string;
   balance: number;
   role: string;
+  roles?: string[];  // Add roles array
   id?: number;
   createdAt?: string;
 }
@@ -43,7 +45,8 @@ export class AuthService {
     const user: User = {
       username: response.username,
       balance: response.balance,
-      role: response.role
+      role: response.role,
+      roles: response.roles || [response.role]  // Use roles array if available, otherwise create array from single role
     };
     
     // Store token and user data
@@ -168,6 +171,7 @@ export class AuthService {
             username: response.username,
             balance: response.balance,
             role: response.role,
+            roles: response.roles || [response.role], // Use roles array if available, otherwise create array from single role
             id: response.id?.toString(), // Convert number to string
             createdAt: response.createdAt ? new Date(response.createdAt) : undefined // Convert string to Date
           };
