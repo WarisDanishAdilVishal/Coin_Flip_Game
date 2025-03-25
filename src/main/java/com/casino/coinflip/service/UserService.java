@@ -53,6 +53,15 @@ public class UserService {
         return userRepository.findByUsername(username);
     }
 
+    public Optional<User> findById(Long id) {
+        return userRepository.findById(id);
+    }
+
+    @Transactional
+    public User saveUser(User user) {
+        return userRepository.save(user);
+    }
+
     @Transactional
     public void updateBalance(User user, BigDecimal amount) {
         user.setBalance(user.getBalance().add(amount));

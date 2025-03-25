@@ -169,6 +169,29 @@ export class AdminService {
     );
   }
 
+  updateUserRole(userId: string, role: string, add: boolean): Observable<void> {
+    const headers = this.getHeaders();
+    console.log(`Admin Service: ${add ? 'Adding' : 'Removing'} role ${role} for user ${userId}`);
+    
+    const url = `${this.apiUrl}/users/${userId}/roles?role=${role}&add=${add}`;
+    
+    console.log('Admin Service: Making request to:', url);
+    
+    return this.http.put<void>(url, {}, { headers }).pipe(
+      tap(() => console.log(`Admin Service: Successfully ${add ? 'added' : 'removed'} role ${role}`)),
+      catchError(error => {
+        console.error(`Admin Service: Error ${add ? 'adding' : 'removing'} role:`, error);
+        return this.handleError(error);
+      })
+    );
+  }
+  
+  // Check if user has specific role
+  hasRole(roles: string[] | undefined, role: string): boolean {
+    if (!roles) return false;
+    return roles.includes(role);
+  }
+
   approveWithdrawal(id: string): Observable<void> {
     const headers = this.getHeaders();
     return this.http.post<void>(`${this.apiUrl}/withdrawals/${id}/approve`, {}, { headers }).pipe(

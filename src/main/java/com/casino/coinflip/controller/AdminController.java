@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.stream.Collectors;
+import java.util.HashSet;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/admin")
@@ -128,5 +130,30 @@ public class AdminController {
     public ResponseEntity<?> rejectWithdrawal(@PathVariable Long requestId) {
         withdrawalService.rejectWithdrawal(requestId);
         return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/users/{userId}/roles")
+    public ResponseEntity<?> updateUserRoles(@PathVariable Long userId, @RequestParam String role, @RequestParam boolean add) {
+        try {
+            User user = userService.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            Set<String> roles = new HashSet<>(user.getRoles());
+            
+            if (add) {
+                roles.add(role);
+            } else {
+                roles.remove(role);
+                // Make sure user still has at least ROLE_USER
+                roles.add("ROLE_USER");
+            }
+            
+            user.setRoles(roles);
+            userService.saveUser(user);
+            
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 }

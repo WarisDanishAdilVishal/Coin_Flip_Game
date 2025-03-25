@@ -44,6 +44,7 @@ export interface UserManagement {
   balance: number;
   status: 'active' | 'suspended' | 'blocked';
   createdAt: string;
+  roles?: string[];
   stats?: {
     totalGames: number;
     profitLoss: number;

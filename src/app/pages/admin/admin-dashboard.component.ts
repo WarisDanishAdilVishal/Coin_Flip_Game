@@ -559,12 +559,12 @@ export class AdminDashboardComponent implements OnInit {
   
   updatePaginatedUsers(): void {
     const startIndex = (this.userCurrentPage - 1) * this.userPageSize;
-    const endIndex = startIndex + this.userPageSize;
+    const endIndex = Math.min(startIndex + this.userPageSize, this.filteredUsers.length);
     this.paginatedUsers = this.filteredUsers.slice(startIndex, endIndex);
   }
   
   goToPreviousUserPage(): void {
-    if (this.userCurrentPage > 1) {  
+    if (this.userCurrentPage > 1) {
       this.userCurrentPage--;
       this.updatePaginatedUsers();
     }
@@ -650,6 +650,56 @@ export class AdminDashboardComponent implements OnInit {
       this.error = 'An unexpected error occurred. Please try again.';
       this.isLoading = false;
     }
+  }
+  
+  updateUserRole(userId: string, role: string, add: boolean): void {
+    console.log(`Admin Dashboard: ${add ? 'Adding' : 'Removing'} role ${role} for user ${userId}`);
+    this.isLoading = true;
+    this.error = null;
+
+    try {
+      this.adminService.updateUserRole(userId, role, add).subscribe({
+        next: () => {
+          console.log(`Admin Dashboard: Successfully ${add ? 'added' : 'removed'} role ${role} for user ${userId}`);
+          
+          // Update local data
+          const index = this.users.findIndex(u => u.id === userId);
+          if (index !== -1) {
+            // Initialize roles array if it doesn't exist
+            if (!this.users[index].roles) {
+              this.users[index].roles = ['ROLE_USER'];
+            }
+            
+            if (add) {
+              // Add role if it doesn't exist
+              if (!this.users[index].roles?.includes(role)) {
+                this.users[index].roles?.push(role);
+              }
+            } else {
+              // Remove role
+              this.users[index].roles = this.users[index].roles?.filter(r => r !== role) || ['ROLE_USER'];
+            }
+            
+            this.filterUsers();
+          }
+          
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error(`Admin Dashboard: Error ${add ? 'adding' : 'removing'} role:`, error);
+          this.error = error.message || `Failed to ${add ? 'add' : 'remove'} role. Please try again.`;
+          this.isLoading = false;
+        }
+      });
+    } catch (err) {
+      console.error('Admin Dashboard: Exception during role update:', err);
+      this.error = 'An unexpected error occurred. Please try again.';
+      this.isLoading = false;
+    }
+  }
+  
+  hasRole(user: UserManagement, role: string): boolean {
+    return this.adminService.hasRole(user.roles, role);
   }
   
   setActiveSection(section: 'stats' | 'transactions' | 'withdrawals' | 'users' | 'deposits'): void {

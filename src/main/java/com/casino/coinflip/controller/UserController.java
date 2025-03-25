@@ -103,7 +103,7 @@ public class UserController {
                 new ArrayList<>(user.getRoles()),
                 user.getId(),
                 user.getCreatedAt(),
-                user.getUsername() + "@example.com", // Placeholder email (you might want to add email to User entity)
+                user.getUsername() + "@example.com", // Placeholder email
                 totalGames,
                 gamesWon,
                 gamesLost,
@@ -150,6 +150,7 @@ public class UserController {
                 user.getUsername(),
                 user.getBalance(),
                 user.getRoles().stream().findFirst().orElse("ROLE_USER"),
+                new ArrayList<>(user.getRoles()),
                 user.getId(),
                 user.getCreatedAt()
             );
