@@ -169,27 +169,25 @@ export class AdminService {
     );
   }
 
-  updateUserRole(userId: string, role: string, add: boolean): Observable<void> {
+  updateUserRole(userId: string, role: string, operation: 'add' | 'remove'): Observable<UserManagement> {
     const headers = this.getHeaders();
-    console.log(`Admin Service: ${add ? 'Adding' : 'Removing'} role ${role} for user ${userId}`);
+    const url = `${this.apiUrl}/users/${userId}/roles/${role}`;
     
-    const url = `${this.apiUrl}/users/${userId}/roles?role=${role}&add=${add}`;
-    
-    console.log('Admin Service: Making request to:', url);
-    
-    return this.http.put<void>(url, {}, { headers }).pipe(
-      tap(() => console.log(`Admin Service: Successfully ${add ? 'added' : 'removed'} role ${role}`)),
-      catchError(error => {
-        console.error(`Admin Service: Error ${add ? 'adding' : 'removing'} role:`, error);
-        return this.handleError(error);
-      })
-    );
+    if (operation === 'add') {
+      return this.http.post<UserManagement>(url, {}, { headers }).pipe(
+        tap(user => console.log(`Added role ${role} for user ${userId}:`, user)),
+        catchError(this.handleError)
+      );
+    } else {
+      return this.http.delete<UserManagement>(url, { headers }).pipe(
+        tap(user => console.log(`Removed role ${role} for user ${userId}:`, user)),
+        catchError(this.handleError)
+      );
+    }
   }
-  
-  // Check if user has specific role
+
   hasRole(roles: string[] | undefined, role: string): boolean {
-    if (!roles) return false;
-    return roles.includes(role);
+    return roles?.includes(role) || false;
   }
 
   approveWithdrawal(id: string): Observable<void> {

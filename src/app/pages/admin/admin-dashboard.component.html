@@ -590,19 +590,6 @@
                               </span>
                             </div>
                             <span class="text-sm text-white/50">ID: {{ user.id }}</span>
-                            
-                            <!-- User Roles -->
-                            <div class="flex flex-wrap gap-1.5 mt-1" *ngIf="user.roles && user.roles.length > 0">
-                              <span *ngFor="let role of user.roles" 
-                                    class="px-2 py-0.5 rounded-md text-xs font-semibold"
-                                    [ngClass]="{
-                                      'bg-purple-500/20 border border-purple-500/30 text-purple-300': role === 'ROLE_ADMIN',
-                                      'bg-blue-500/20 border border-blue-500/30 text-blue-300': role === 'ADMIN',
-                                      'bg-teal-500/20 border border-teal-500/30 text-teal-300': role === 'ROLE_USER'
-                                    }">
-                                {{ role }}
-                              </span>
-                            </div>
                           </div>
                         </div>
 
@@ -646,78 +633,80 @@
                       </div>
 
                       <!-- Action Buttons -->
-                      <div class="flex gap-2 sm:self-center flex-wrap">
+                      <div class="flex flex-col gap-4 sm:self-start">
                         <!-- Status buttons -->
-                        <app-button
-                          *ngIf="user.status !== 'active'"
-                          (onClick)="updateUserStatus(user.id, 'active')"
-                          className="bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-400/30 transition-all duration-200 hover:scale-105"
-                          fontSize="0.75rem"
-                          padding="0.375rem 0.75rem"
-                        >
-                          <lucide-icon name="user-check" [size]="14" class="mr-1"></lucide-icon> Activate
-                        </app-button>
-                        <app-button
-                          *ngIf="user.status !== 'suspended'"
-                          (onClick)="updateUserStatus(user.id, 'suspended')"
-                          className="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border border-yellow-400/30 transition-all duration-200 hover:scale-105"
-                          fontSize="0.75rem"
-                          padding="0.375rem 0.75rem"
-                        >
-                          <lucide-icon name="alert-triangle" [size]="14" class="mr-1"></lucide-icon> Suspend
-                        </app-button>
-                        <app-button
-                          *ngIf="user.status !== 'blocked'"
-                          (onClick)="updateUserStatus(user.id, 'blocked')"
-                          className="bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-400/30 transition-all duration-200 hover:scale-105"
-                          fontSize="0.75rem"
-                          padding="0.375rem 0.75rem"
-                        >
-                          <lucide-icon name="ban" [size]="14" class="mr-1"></lucide-icon> Block
-                        </app-button>
+                        <div class="flex gap-2 flex-wrap">
+                          <app-button
+                            *ngIf="user.status !== 'active'"
+                            (onClick)="updateUserStatus(user.id, 'active')"
+                            className="bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-400/30 transition-all duration-200 hover:scale-105"
+                            fontSize="0.75rem"
+                            padding="0.375rem 0.75rem"
+                          >
+                            <lucide-icon name="user-check" [size]="14" class="mr-1"></lucide-icon> Activate
+                          </app-button>
+                          <app-button
+                            *ngIf="user.status !== 'suspended'"
+                            (onClick)="updateUserStatus(user.id, 'suspended')"
+                            className="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border border-yellow-400/30 transition-all duration-200 hover:scale-105"
+                            fontSize="0.75rem"
+                            padding="0.375rem 0.75rem"
+                          >
+                            <lucide-icon name="alert-triangle" [size]="14" class="mr-1"></lucide-icon> Suspend
+                          </app-button>
+                          <app-button
+                            *ngIf="user.status !== 'blocked'"
+                            (onClick)="updateUserStatus(user.id, 'blocked')"
+                            className="bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-400/30 transition-all duration-200 hover:scale-105"
+                            fontSize="0.75rem"
+                            padding="0.375rem 0.75rem"
+                          >
+                            <lucide-icon name="ban" [size]="14" class="mr-1"></lucide-icon> Block
+                          </app-button>
+                        </div>
                         
                         <!-- Role Management Section -->
-                        <div class="w-full mt-2"></div>
-                        
-                        <!-- Super User Access (ADMIN role) -->
-                        <app-button
-                          *ngIf="!hasRole(user, 'ADMIN')"
-                          (onClick)="updateUserRole(user.id, 'ADMIN', true)"
-                          className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-400/30 transition-all duration-200 hover:scale-105"
-                          fontSize="0.75rem"
-                          padding="0.375rem 0.75rem"
-                        >
-                          <lucide-icon name="shield" [size]="14" class="mr-1"></lucide-icon> SUPER USER ACCESS
-                        </app-button>
-                        <app-button
-                          *ngIf="hasRole(user, 'ADMIN')"
-                          (onClick)="updateUserRole(user.id, 'ADMIN', false)"
-                          className="bg-blue-700/30 hover:bg-blue-700/40 text-blue-200 border border-blue-300/30 transition-all duration-200 hover:scale-105"
-                          fontSize="0.75rem"
-                          padding="0.375rem 0.75rem"
-                        >
-                          <lucide-icon name="shield-off" [size]="14" class="mr-1"></lucide-icon> Revoke SUPER USER
-                        </app-button>
-                        
-                        <!-- Admin Access (ROLE_ADMIN role) -->
-                        <app-button
-                          *ngIf="!hasRole(user, 'ROLE_ADMIN')"
-                          (onClick)="updateUserRole(user.id, 'ROLE_ADMIN', true)"
-                          className="bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-400/30 transition-all duration-200 hover:scale-105"
-                          fontSize="0.75rem"
-                          padding="0.375rem 0.75rem"
-                        >
-                          <lucide-icon name="shield-alert" [size]="14" class="mr-1"></lucide-icon> ADMIN ACCESS
-                        </app-button>
-                        <app-button
-                          *ngIf="hasRole(user, 'ROLE_ADMIN')"
-                          (onClick)="updateUserRole(user.id, 'ROLE_ADMIN', false)"
-                          className="bg-purple-700/30 hover:bg-purple-700/40 text-purple-200 border border-purple-300/30 transition-all duration-200 hover:scale-105"
-                          fontSize="0.75rem"
-                          padding="0.375rem 0.75rem"
-                        >
-                          <lucide-icon name="shield-off" [size]="14" class="mr-1"></lucide-icon> Revoke ADMIN
-                        </app-button>
+                        <div class="flex flex-col gap-2">
+                          <!-- Super User Access (ADMIN role) -->
+                          <app-button
+                            *ngIf="!hasRole(user, 'ADMIN')"
+                            (onClick)="updateUserRole(user.id, 'ADMIN', 'add')"
+                            className="bg-gradient-to-r from-blue-500/20 to-blue-600/20 hover:from-blue-500/30 hover:to-blue-600/30 text-blue-300 border border-blue-400/30 transition-all duration-200 hover:scale-105 whitespace-nowrap"
+                            fontSize="0.75rem"
+                            padding="0.5rem 1rem"
+                          >
+                            <lucide-icon [name]="icons.Shield" [size]="14" class="mr-1.5"></lucide-icon> Grant Super User
+                          </app-button>
+                          <app-button
+                            *ngIf="hasRole(user, 'ADMIN')"
+                            (onClick)="updateUserRole(user.id, 'ADMIN', 'remove')"
+                            className="bg-gradient-to-r from-blue-700/30 to-blue-800/30 hover:from-blue-700/40 hover:to-blue-800/40 text-blue-200 border border-blue-300/30 transition-all duration-200 hover:scale-105 whitespace-nowrap"
+                            fontSize="0.75rem"
+                            padding="0.5rem 1rem"
+                          >
+                            <lucide-icon [name]="icons.ShieldOff" [size]="14" class="mr-1.5"></lucide-icon> Revoke Super User
+                          </app-button>
+                          
+                          <!-- Admin Access (ROLE_ADMIN role) -->
+                          <app-button
+                            *ngIf="!hasRole(user, 'ROLE_ADMIN')"
+                            (onClick)="updateUserRole(user.id, 'ROLE_ADMIN', 'add')"
+                            className="bg-gradient-to-r from-purple-500/20 to-purple-600/20 hover:from-purple-500/30 hover:to-purple-600/30 text-purple-300 border border-purple-400/30 transition-all duration-200 hover:scale-105 whitespace-nowrap"
+                            fontSize="0.75rem"
+                            padding="0.5rem 1rem"
+                          >
+                            <lucide-icon [name]="icons.ShieldAlert" [size]="14" class="mr-1.5"></lucide-icon> Grant Admin Access
+                          </app-button>
+                          <app-button
+                            *ngIf="hasRole(user, 'ROLE_ADMIN')"
+                            (onClick)="updateUserRole(user.id, 'ROLE_ADMIN', 'remove')"
+                            className="bg-gradient-to-r from-purple-700/30 to-purple-800/30 hover:from-purple-700/40 hover:to-purple-800/40 text-purple-200 border border-purple-300/30 transition-all duration-200 hover:scale-105 whitespace-nowrap"
+                            fontSize="0.75rem"
+                            padding="0.5rem 1rem"
+                          >
+                            <lucide-icon [name]="icons.ShieldOff" [size]="14" class="mr-1.5"></lucide-icon> Revoke Admin Access
+                          </app-button>
+                        </div>
                       </div>
                     </div>
                   </div>

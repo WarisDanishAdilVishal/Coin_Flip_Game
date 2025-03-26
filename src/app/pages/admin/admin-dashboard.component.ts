@@ -1,13 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { LucideAngularModule, BarChart, Users, CreditCard, DollarSign, ArrowLeft, CheckCircle, XCircle, Search, AlertTriangle, Ban, UserCheck, Joystick } from 'lucide-angular';
+import { LucideAngularModule, BarChart, Users, CreditCard, DollarSign, ArrowLeft, CheckCircle, XCircle, Search, AlertTriangle, Ban, UserCheck, Joystick, Shield, ShieldOff, ShieldAlert, ChevronRight } from 'lucide-angular';
 import { HeaderComponent } from '../../components/header/header.component';
 import { ButtonComponent } from '../../components/button/button.component';
 import { AdminService } from '../../services/admin.service';
 import { AuthService } from '../../services/auth.service';
-import { GameStats, Transaction, WithdrawalRequest, UserManagement } from '../../models/admin.model';
+import { UserService, User } from '../../services/user.service';
+import { GameStats, Transaction, WithdrawalRequest } from '../../models/admin.model';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -22,7 +23,27 @@ import { GameStats, Transaction, WithdrawalRequest, UserManagement } from '../..
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.css'] 
 })
-export class AdminDashboardComponent implements OnInit {
+export class AdminDashboardComponent implements OnInit, OnDestroy {
+  // Register icons for use in the template
+  protected readonly icons = {
+    BarChart,
+    Users,
+    CreditCard,
+    DollarSign,
+    ArrowLeft,
+    CheckCircle,
+    XCircle,
+    Search,
+    AlertTriangle,
+    Ban,
+    UserCheck,
+    Joystick,
+    Shield,
+    ShieldOff,
+    ShieldAlert,
+    ChevronRight
+  };
+
   username: string = '';
   activeSection: 'stats' | 'transactions' | 'withdrawals' | 'users' | 'deposits' = 'stats';
   
@@ -59,9 +80,9 @@ export class AdminDashboardComponent implements OnInit {
   withdrawalPageSize: number = 5;
   
   // Users
-  users: UserManagement[] = [];
-  filteredUsers: UserManagement[] = [];
-  paginatedUsers: UserManagement[] = [];
+  users: User[] = [];
+  filteredUsers: User[] = [];
+  paginatedUsers: User[] = [];
   userSearch: string = '';
   userStatusFilter: string = 'all';
   userCurrentPage: number = 1;
@@ -88,7 +109,8 @@ export class AdminDashboardComponent implements OnInit {
   constructor(
     private adminService: AdminService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private userService: UserService
   ) {}
   
   ngOnInit(): void {
@@ -118,6 +140,10 @@ export class AdminDashboardComponent implements OnInit {
     
     // Load initial data for the active section
     this.loadDataForSection(this.activeSection);
+  }
+  
+  ngOnDestroy(): void {
+    // Cleanup code if needed
   }
   
   private loadDataForSection(section: 'stats' | 'transactions' | 'withdrawals' | 'users' | 'deposits'): void {
@@ -263,80 +289,17 @@ export class AdminDashboardComponent implements OnInit {
   }
   
   loadUsers(): void {
-    console.log('Admin Dashboard: Starting to load users...');
     this.isLoading = true;
-    this.error = null;
-    
-    // Check if we have a valid token
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.error('Admin Dashboard: No token found');
-      this.error = 'Authentication required. Please log in again.';
-      this.isLoading = false;
-      return;
-    }
-    
-    this.adminService.getUsers().subscribe({
+    this.userService.getAllUsers().subscribe({
       next: (users) => {
-        console.log('Admin Dashboard: Users loaded successfully:', users);
-        this.error = null;
-        if (!users) {
-          console.error('Admin Dashboard: Received null users data');
-          this.error = 'Invalid data received from server';
-          this.users = [];
-          this.filteredUsers = [];
-          this.paginatedUsers = [];
-        } else if (users.length === 0) {
-          console.log('Admin Dashboard: No users found');
-          this.users = [];
-          this.filteredUsers = [];
-          this.paginatedUsers = [];
-        } else {
-          console.log('Admin Dashboard: Processing users data:', users);
-          // Ensure all required fields are present and properly formatted
-          this.users = users.map(user => {
-            // Log each user's data for debugging
-            console.log('Processing user:', user);
-            
-            // Ensure stats object exists and has all required fields
-            const stats = {
-              totalGames: Number(user.stats?.totalGames) || 0,
-              profitLoss: Number(user.stats?.profitLoss) || 0,
-              lastActive: user.stats?.lastActive || new Date().toISOString()
-            };
-            
-            // Create a properly formatted user object
-            const formattedUser = {
-              id: user.id || '',
-              username: user.username || 'Unknown User',
-              balance: Number(user.balance) || 0,
-              status: user.status || 'active',
-              createdAt: user.createdAt || new Date().toISOString(),
-              stats: stats
-            };
-            
-            console.log('Formatted user:', formattedUser);
-            return formattedUser;
-          });
-          
-          // Initialize filtered users with all users and set up pagination
-          this.filteredUsers = [...this.users];
-          this.userTotalPages = Math.max(1, Math.ceil(this.filteredUsers.length / this.userPageSize));
-          this.userCurrentPage = 1;
-          this.updatePaginatedUsers();
-          
-          console.log('Admin Dashboard: Processed users:', this.users);
-          console.log('Admin Dashboard: Filtered users:', this.filteredUsers);
-          console.log('Admin Dashboard: Paginated users:', this.paginatedUsers);
-        }
+        this.users = users;
+        this.filteredUsers = users;
+        this.updatePaginatedUsers();
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Admin Dashboard: Error loading users:', error);
-        this.error = error.message || 'Failed to load users. Please try again.';
-        this.users = [];
-        this.filteredUsers = [];
-        this.paginatedUsers = [];
+        console.error('Error loading users:', error);
+        this.error = 'Failed to load users';
         this.isLoading = false;
       }
     });
@@ -530,16 +493,11 @@ export class AdminDashboardComponent implements OnInit {
     }
     
     this.filteredUsers = this.users.filter(user => {
-      // Filter by search term
-      const searchMatch = !this.userSearch || 
+      const matchesSearch = !this.userSearch || 
         user.username.toLowerCase().includes(this.userSearch.toLowerCase());
-      
-      // Filter by status
-      const statusMatch = this.userStatusFilter === 'all' || user.status === this.userStatusFilter;
-      
-      const matches = searchMatch && statusMatch;
-      console.log(`Admin Dashboard: User ${user.username} matches filters:`, matches);
-      return matches;
+      const matchesStatus = this.userStatusFilter === 'all' || 
+        user.status.toLowerCase() === this.userStatusFilter.toLowerCase();
+      return matchesSearch && matchesStatus;
     });
     
     // If we have no results but did have a search term, clear any error message
@@ -652,54 +610,26 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
   
-  updateUserRole(userId: string, role: string, add: boolean): void {
-    console.log(`Admin Dashboard: ${add ? 'Adding' : 'Removing'} role ${role} for user ${userId}`);
-    this.isLoading = true;
-    this.error = null;
-
-    try {
-      this.adminService.updateUserRole(userId, role, add).subscribe({
-        next: () => {
-          console.log(`Admin Dashboard: Successfully ${add ? 'added' : 'removed'} role ${role} for user ${userId}`);
-          
-          // Update local data
-          const index = this.users.findIndex(u => u.id === userId);
-          if (index !== -1) {
-            // Initialize roles array if it doesn't exist
-            if (!this.users[index].roles) {
-              this.users[index].roles = ['ROLE_USER'];
-            }
-            
-            if (add) {
-              // Add role if it doesn't exist
-              if (!this.users[index].roles?.includes(role)) {
-                this.users[index].roles?.push(role);
-              }
-            } else {
-              // Remove role
-              this.users[index].roles = this.users[index].roles?.filter(r => r !== role) || ['ROLE_USER'];
-            }
-            
-            this.filterUsers();
-          }
-          
-          this.isLoading = false;
-        },
-        error: (error) => {
-          console.error(`Admin Dashboard: Error ${add ? 'adding' : 'removing'} role:`, error);
-          this.error = error.message || `Failed to ${add ? 'add' : 'remove'} role. Please try again.`;
-          this.isLoading = false;
+  updateUserRole(userId: string, role: string, operation: 'add' | 'remove'): void {
+    this.userService.updateUserRoles(userId, role, operation).subscribe({
+      next: (updatedUser) => {
+        // Update the user in the local array
+        const index = this.users.findIndex(u => u.id === updatedUser.id);
+        if (index !== -1) {
+          this.users[index] = updatedUser;
+          this.filteredUsers[index] = updatedUser;
+          this.updatePaginatedUsers();
         }
-      });
-    } catch (err) {
-      console.error('Admin Dashboard: Exception during role update:', err);
-      this.error = 'An unexpected error occurred. Please try again.';
-      this.isLoading = false;
-    }
+      },
+      error: (error) => {
+        console.error('Error updating user role:', error);
+        this.error = 'Failed to update user role';
+      }
+    });
   }
   
-  hasRole(user: UserManagement, role: string): boolean {
-    return this.adminService.hasRole(user.roles, role);
+  hasRole(user: User, role: string): boolean {
+    return user.roles.includes(role);
   }
   
   setActiveSection(section: 'stats' | 'transactions' | 'withdrawals' | 'users' | 'deposits'): void {
@@ -771,12 +701,7 @@ export class AdminDashboardComponent implements OnInit {
   }
   
   formatUserStatus(status: string): string {
-    switch (status) {
-      case 'active': return 'Active';
-      case 'suspended': return 'Suspended';
-      case 'blocked': return 'Blocked';
-      default: return status;
-    }
+    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
   }
   
   formatPaymentMethod(method: string): string {
@@ -838,5 +763,13 @@ export class AdminDashboardComponent implements OnInit {
     this.betAmountOptions = Array.from(uniqueAmounts).sort((a, b) => a - b);
     
     console.log('Available bet amounts:', this.betAmountOptions);
+  }
+
+  toggleUserRole(userId: string, role: string): void {
+    const user = this.users.find(u => u.id === userId);
+    if (user) {
+      const operation = this.hasRole(user, role) ? 'remove' : 'add';
+      this.updateUserRole(userId, role, operation);
+    }
   }
 }

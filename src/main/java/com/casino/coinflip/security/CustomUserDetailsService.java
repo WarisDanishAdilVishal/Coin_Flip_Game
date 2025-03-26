@@ -66,10 +66,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         public Collection<SimpleGrantedAuthority> getAuthorities() {
             return user.getRoles().stream()
                     .map(role -> {
-                        // Ensure the role has the ROLE_ prefix
-                        if (!role.startsWith("ROLE_")) {
-                            return new SimpleGrantedAuthority("ROLE_" + role);
-                        }
+                        // Always use the role as is, since we're using hasAuthority
                         return new SimpleGrantedAuthority(role);
                     })
                     .collect(Collectors.toList());

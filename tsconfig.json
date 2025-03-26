@@ -26,5 +26,8 @@
     "strictInputAccessModifiers": true,
     "strictTemplates": true,
     "strictStandalone": true
-  }
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
 }

@@ -4,6 +4,7 @@ import com.casino.coinflip.entity.User;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Set;
 
 public class UserManagementDto {
     private Long id;
@@ -11,6 +12,7 @@ public class UserManagementDto {
     private BigDecimal balance;
     private String status;
     private String createdAt;
+    private Set<String> roles;
     private UserStatsDto stats;
 
     public UserManagementDto(User user, Long totalGames, BigDecimal profitLoss) {
@@ -19,6 +21,7 @@ public class UserManagementDto {
         this.balance = user.getBalance();
         this.status = user.getStatus().toString().toLowerCase();
         this.createdAt = formatDateTime(user.getCreatedAt());
+        this.roles = user.getRoles();
         this.stats = new UserStatsDto(totalGames, profitLoss, user.getLastActive());
     }
 
@@ -45,6 +48,10 @@ public class UserManagementDto {
 
     public String getCreatedAt() {
         return createdAt;
+    }
+
+    public Set<String> getRoles() {
+        return roles;
     }
 
     public UserStatsDto getStats() {

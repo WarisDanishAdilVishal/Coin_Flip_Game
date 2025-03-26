@@ -44,11 +44,12 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/login").permitAll()
-                .requestMatchers("/auth/**").permitAll()
-                .requestMatchers("/game/**").authenticated()
-                .requestMatchers("/user/**").authenticated()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/auth/login", "/api/auth/login").permitAll()
+                .requestMatchers("/auth/**", "/api/auth/**").permitAll()
+                .requestMatchers("/game/**", "/api/game/**").authenticated()
+                .requestMatchers("/user/**", "/api/user/**").authenticated()
+                .requestMatchers("/users", "/api/users", "/admin/users", "/api/admin/users").hasAuthority("ROLE_ADMIN")
+                .requestMatchers("/admin/**", "/api/admin/**").hasAuthority("ROLE_ADMIN")
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -56,11 +57,7 @@ public class SecurityConfig {
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) -> {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.getWriter().write("Unauthorized: " + authException.getMessage());
-                })
-                .accessDeniedHandler((request, response, accessDeniedException) -> {
-                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    response.getWriter().write("Access Denied: " + accessDeniedException.getMessage());
+                    response.getWriter().write("{\"error\":\"Unauthorized\"}");
                 })
             );
 

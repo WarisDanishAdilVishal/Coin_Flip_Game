@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.Set;
 
 @Service
 public class UserService {
@@ -45,6 +46,7 @@ public class UserService {
         user.setRoles(new HashSet<>(java.util.Arrays.asList("ROLE_USER")));
         user.setCreatedAt(LocalDateTime.now());
         user.setLastActive(LocalDateTime.now());
+        user.setStatus(User.UserStatus.ACTIVE);
 
         return userRepository.save(user);
     }
@@ -59,6 +61,10 @@ public class UserService {
 
     @Transactional
     public User saveUser(User user) {
+        // Ensure user has at least ROLE_USER
+        if (user.getRoles().isEmpty()) {
+            user.getRoles().add("ROLE_USER");
+        }
         return userRepository.save(user);
     }
 
@@ -82,19 +88,23 @@ public class UserService {
     }
     
     public List<UserManagementDto> getAllUsersWithStats() {
-        List<User> users = userRepository.findAll();
-        
-        return users.stream().map(user -> {
-            Long totalGames = gameRepository.countGamesByUserId(user.getId());
-            BigDecimal profitLoss = gameRepository.calculateProfitLossByUserId(user.getId());
+        try {
+            List<User> users = userRepository.findAll();
             
-            // Handle null values for new users
-            if (profitLoss == null) {
-                profitLoss = BigDecimal.ZERO;
-            }
-            
-            return new UserManagementDto(user, totalGames, profitLoss);
-        }).collect(Collectors.toList());
+            return users.stream().map(user -> {
+                Long totalGames = gameRepository.countGamesByUserId(user.getId());
+                BigDecimal profitLoss = gameRepository.calculateProfitLossByUserId(user.getId());
+                
+                // Handle null values for new users
+                if (profitLoss == null) {
+                    profitLoss = BigDecimal.ZERO;
+                }
+                
+                return new UserManagementDto(user, totalGames, profitLoss);
+            }).collect(Collectors.toList());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch users with stats: " + e.getMessage());
+        }
     }
     
     public List<Transaction> getAllTransactions() {
@@ -109,5 +119,29 @@ public class UserService {
         });
         
         return transactions;
+    }
+
+    public User save(User user) {
+        return userRepository.save(user);
+    }
+
+    public boolean hasRole(User user, String role) {
+        return user.getRoles() != null && user.getRoles().contains(role);
+    }
+
+    public User addRole(User user, String role) {
+        Set<String> roles = new HashSet<>(user.getRoles());
+        roles.add(role);
+        user.setRoles(roles);
+        return userRepository.save(user);
+    }
+
+    public User removeRole(User user, String role) {
+        Set<String> roles = new HashSet<>(user.getRoles());
+        roles.remove(role);
+        // Ensure user always has ROLE_USER
+        roles.add("ROLE_USER");
+        user.setRoles(roles);
+        return userRepository.save(user);
     }
 }
