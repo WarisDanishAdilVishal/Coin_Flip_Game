@@ -151,19 +151,19 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div class="space-y-2">
                     <p class="text-pink-300 text-sm">Current Balance</p>
-                    <p class="text-white font-bold text-xl">₹{{ userBalance || 0 }}</p>
+                    <p class="text-white font-bold text-xl">₹{{ toLocalizedString(userBalance) }}</p>
                   </div>
                   <div class="space-y-2">
                     <p class="text-pink-300 text-sm">Lifetime Earnings</p>
                     <p class="text-white font-medium" [ngClass]="(lifetimeEarnings || 0) >= 0 ? 'text-green-400' : 'text-red-400'">
-                      {{ (lifetimeEarnings || 0) >= 0 ? '+' : '' }}₹{{ lifetimeEarnings || 0 }}
+                      {{ (lifetimeEarnings || 0) >= 0 ? '+' : '' }}₹{{ toLocalizedString(lifetimeEarnings) }}
                     </p>
                   </div>
                 </div>
                 
                 <div class="space-y-2" *ngIf="highestWin > 0">
                   <p class="text-pink-300 text-sm">Highest Win</p>
-                  <p class="text-green-400 font-medium text-lg">₹{{ highestWin || 0 }}</p>
+                  <p class="text-green-400 font-medium text-lg">₹{{ toLocalizedString(highestWin) }}</p>
                 </div>
               </div>
             </div>
@@ -215,7 +215,7 @@
                         class="border-t border-blue-500/10"
                       >
                         <td class="py-4">{{ formatDateTime(game.timestamp) }}</td>
-                        <td>₹{{ game.bet.toLocaleString() }}</td>
+                        <td>₹{{ toLocalizedString(game.bet) }}</td>
                         <td class="capitalize">
                           <span>{{ game.choice }}</span>
                         </td>
@@ -223,7 +223,7 @@
                           <span>{{ game.outcome }}</span>
                         </td>
                         <td class="text-right font-medium">
-                          {{ game.won ? '+' : '-' }}₹{{ game.bet.toLocaleString() }}
+                          {{ game.won ? '+' : '-' }}₹{{ toLocalizedString(game.bet) }}
                         </td>
                       </tr>
                     </tbody>
@@ -269,79 +269,168 @@
                 Withdraw Money
               </h2>
               
-              <div *ngIf="withdrawalSuccess" class="mb-6 bg-green-500/20 text-green-400 p-4 rounded-lg flex items-start gap-3">
-                <lucide-icon name="check-circle" [size]="20" class="mt-0.5"></lucide-icon>
+              <!-- Withdrawal Error Display -->
+              <div *ngIf="withdrawalError" class="mb-6 bg-red-500/20 text-red-400 p-4 rounded-lg flex items-start gap-3 border border-red-500/30 animate-fade-in">
+                <lucide-icon name="alert-circle" [size]="20" class="flex-shrink-0 text-red-400"></lucide-icon>
                 <div>
-                  <p class="font-medium">Withdrawal Request Successful!</p>
-                  <p class="text-sm mt-1">Your request for ₹{{ lastWithdrawalAmount.toLocaleString() }} has been submitted and will be processed within 24-48 hours.</p>
+                  <h4 class="font-medium">
+                    <ng-container *ngIf="withdrawalError && (withdrawalError.includes('one withdrawal request per day') || withdrawalError.includes('daily limit')); else regularError">
+                      Daily Limit Reached
+                    </ng-container>
+                    <ng-template #regularError>Withdrawal Request Failed</ng-template>
+                  </h4>
+                  <p class="text-sm mt-1">{{ withdrawalError }}</p>
+                  
+                  <!-- Show pending withdrawal details if this is a daily limit error -->
+                  <div *ngIf="withdrawalError && (withdrawalError.includes('one withdrawal request per day') || withdrawalError.includes('daily limit'))" 
+                       class="mt-2 p-2 bg-black/30 rounded border border-red-500/20 text-xs">
+                    <p class="font-medium text-yellow-400">Your pending withdrawal:</p>
+                    <ng-container *ngFor="let withdrawal of withdrawalHistory">
+                      <div *ngIf="withdrawal.status === 'pending'" class="mt-1 flex justify-between">
+                        <span>Amount: <strong>₹{{ toLocalizedString(withdrawal.amount) }}</strong></span>
+                        <span>Requested: {{ formatDateTime(withdrawal.timestamp) }}</span>
+                      </div>
+                    </ng-container>
+                    <p class="mt-2 text-yellow-300/70">Please wait for this request to be processed or try again tomorrow.</p>
+                  </div>
+                  
+                  <button (click)="withdrawalError = null" class="mt-2 text-xs text-yellow-400 hover:text-yellow-300 transition-colors flex items-center gap-1">
+                    <lucide-icon name="x-circle" [size]="12"></lucide-icon>
+                    Dismiss
+                  </button>
                 </div>
               </div>
               
-              <div *ngIf="withdrawalError" class="mb-6 bg-red-500/20 text-red-400 p-4 rounded-lg flex items-start gap-3">
-                <lucide-icon name="alert-triangle" [size]="20" class="mt-0.5"></lucide-icon>
+              <!-- Withdrawal Success Message -->
+              <div *ngIf="withdrawalSuccess" class="mb-6 bg-green-500/20 text-green-400 p-4 rounded-lg flex items-start gap-3 border border-green-500/30 animate-fade-in">
+                <lucide-icon name="check-circle" [size]="20" class="flex-shrink-0 text-green-400"></lucide-icon>
                 <div>
-                  <p class="font-medium">Withdrawal Request Failed</p>
-                  <p class="text-sm mt-1">{{ withdrawalError }}</p>
+                  <h4 class="font-medium">Withdrawal Request Submitted</h4>
+                  <p class="text-sm mt-1">
+                    Your withdrawal request for ₹{{ lastWithdrawalAmount }} has been successfully submitted and is pending approval.
+                    You will be notified once it's processed.
+                  </p>
+                  <button (click)="withdrawalSuccess = false" class="mt-2 text-xs text-yellow-400 hover:text-yellow-300 transition-colors flex items-center gap-1">
+                    <lucide-icon name="x-circle" [size]="12"></lucide-icon>
+                    Dismiss
+                  </button>
                 </div>
               </div>
               
               <div *ngIf="activeSection === 'withdrawal'" class="space-y-6">
-                <div class="bg-black/50 p-6 rounded-lg">
-                  <h2 class="text-xl font-bold text-white mb-4">Withdraw Funds</h2>
-                  <form [formGroup]="withdrawalForm" (ngSubmit)="submitWithdrawal()" class="space-y-4">
-                    <div class="mb-6">
-                      <label class="block text-sm font-medium text-gray-300 mb-2">Amount</label>
-                      <input type="number" formControlName="amount" 
-                        class="w-full px-4 py-2 bg-black/30 border border-yellow-500/30 rounded-lg text-white focus:outline-none focus:border-yellow-500"
-                        placeholder="Enter amount">
-                    </div>
-                    
-                    <div class="mb-6">
-                      <label class="block text-sm font-medium text-gray-300 mb-2">Payment Method</label>
-                      <div class="px-4 py-2 bg-black/30 border border-yellow-500/30 rounded-lg text-white">
-                        UPI
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <!-- Withdraw Form -->
+                  <div class="bg-black/50 p-6 rounded-lg border border-yellow-500/20 hover:border-yellow-500/40 transition-colors shadow-lg">
+                    <div class="flex items-center justify-between mb-4">
+                      <h2 class="text-xl font-bold text-white">Withdraw Funds</h2>
+                      <div class="text-yellow-400 font-medium text-sm bg-yellow-400/10 px-3 py-1 rounded-full border border-yellow-400/20">
+                        Balance: ₹{{ toLocalizedString(userBalance) }}
                       </div>
-                      <input type="hidden" formControlName="method" value="upi">
                     </div>
                     
-                    <div class="mb-6">
-                      <label class="block text-sm font-medium text-gray-300 mb-2">UPI ID</label>
-                      <input type="text" formControlName="details" 
-                        class="w-full px-4 py-2 bg-black/30 border border-yellow-500/30 rounded-lg text-white focus:outline-none focus:border-yellow-500"
-                        placeholder="Enter your UPI ID">
-                    </div>
-                    
-                    <button type="submit" 
-                            [disabled]="!withdrawalForm.valid || withdrawalProcessing"
-                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                      {{ withdrawalProcessing ? 'Processing...' : 'Submit Withdrawal Request' }}
-                    </button>
-                  </form>
-                </div>
+                    <form [formGroup]="withdrawalForm" (ngSubmit)="submitWithdrawal()" class="space-y-5">
+                      <div class="space-y-2">
+                        <label class="block text-sm font-medium text-yellow-300 mb-1">Amount (₹)</label>
+                        <div class="relative">
+                          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">₹</span>
+                          <input type="number" formControlName="amount" 
+                            class="w-full pl-8 pr-4 py-3 bg-black/40 border border-yellow-500/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/70 transition-all"
+                            placeholder="Enter amount (min ₹1000)">
+                        </div>
+                        <p class="text-xs text-yellow-300/70 mt-1">Minimum withdrawal: ₹1,000</p>
+                      </div>
+                      
+                      <div class="space-y-2">
+                        <label class="block text-sm font-medium text-yellow-300 mb-1">Payment Method</label>
+                        <div class="px-4 py-3 bg-black/40 border border-yellow-500/30 rounded-lg text-white flex items-center gap-2">
+                          <lucide-icon name="credit-card" [size]="16" class="text-yellow-400"></lucide-icon>
+                          <span>UPI</span>
+                          <span class="ml-auto text-xs bg-yellow-400/20 text-yellow-400 px-2 py-0.5 rounded">Fastest</span>
+                        </div>
+                        <input type="hidden" formControlName="method" value="upi">
+                      </div>
+                      
+                      <div class="space-y-2">
+                        <label class="block text-sm font-medium text-yellow-300 mb-1">UPI ID</label>
+                        <div class="relative">
+                          <lucide-icon name="at-sign" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></lucide-icon>
+                          <input type="text" formControlName="details" 
+                            class="w-full pl-10 pr-4 py-3 bg-black/40 border border-yellow-500/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/70 transition-all"
+                            placeholder="username(at)bankname">
+                        </div>
+                        <p class="text-xs text-yellow-300/70 mt-1">Enter your full UPI ID (e.g. username(at)bankname)</p>
+                      </div>
+                      
+                      <button type="submit" 
+                              [disabled]="!withdrawalForm.valid || withdrawalProcessing"
+                              class="w-full mt-4 px-4 py-3 bg-gradient-to-r from-yellow-500 to-amber-600 text-white font-medium rounded-lg hover:from-yellow-600 hover:to-amber-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                        <div class="flex items-center justify-center gap-2">
+                          <lucide-icon *ngIf="withdrawalProcessing" name="loader" [size]="16" class="animate-spin"></lucide-icon>
+                          <lucide-icon *ngIf="!withdrawalProcessing" name="send" [size]="16"></lucide-icon>
+                          <span>{{ withdrawalProcessing ? 'Processing...' : 'Submit Withdrawal Request' }}</span>
+                        </div>
+                      </button>
+                    </form>
+                  </div>
 
-                <!-- Withdrawal History -->
-                <div class="bg-black/50 p-6 rounded-lg">
-                  <h2 class="text-xl font-bold text-white mb-4">Withdrawal History</h2>
-                  <div class="space-y-4">
-                    <div *ngFor="let withdrawal of withdrawalHistory" 
-                         class="bg-black/30 p-4 rounded-lg">
-                      <div class="flex justify-between items-center">
-                        <div>
-                          <p class="text-white font-medium">₹{{ withdrawal.amount }}</p>
-                          <p class="text-sm text-gray-400">{{ formatDateTime(withdrawal.timestamp) }}</p>
+                  <!-- Withdrawal History -->
+                  <div class="bg-black/50 p-6 rounded-lg border border-yellow-500/20 hover:border-yellow-500/40 transition-colors shadow-lg">
+                    <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                      <lucide-icon name="history" [size]="16" class="text-yellow-400"></lucide-icon>
+                      Withdrawal History
+                      <span *ngIf="isLoadingWithdrawalHistory" class="ml-2 text-xs font-normal text-yellow-300/70">(Loading...)</span>
+                    </h2>
+                    
+                    <div *ngIf="withdrawalHistoryLoadError" class="mb-4 bg-red-500/20 text-red-400 p-3 rounded-lg text-sm border border-red-500/30">
+                      <p>There was an error loading your withdrawal history. Please try again later.</p>
+                    </div>
+                    
+                    <div *ngIf="isLoadingWithdrawalHistory" class="flex flex-col items-center justify-center py-12">
+                      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
+                      <p class="mt-4 text-yellow-400/70">Loading withdrawal history...</p>
+                    </div>
+                    
+                    <div *ngIf="!isLoadingWithdrawalHistory && withdrawalHistory.length === 0 && !withdrawalHistoryLoadError" class="flex flex-col items-center justify-center py-12 text-gray-500">
+                      <lucide-icon name="file-text" [size]="48" class="mb-4 text-yellow-500/30"></lucide-icon>
+                      <p>No withdrawal history yet</p>
+                    </div>
+                    
+                    <div *ngIf="!isLoadingWithdrawalHistory && withdrawalHistory.length > 0" class="space-y-4 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
+                      <div *ngFor="let withdrawal of withdrawalHistory" 
+                           class="bg-black/40 p-4 rounded-lg border border-yellow-500/10 hover:border-yellow-500/30 transition-colors">
+                        <div class="flex justify-between items-center gap-4">
+                          <div>
+                            <p class="text-white font-medium text-lg">₹{{ toLocalizedString(withdrawal.amount) }}</p>
+                            <p class="text-xs text-gray-400 flex items-center gap-1">
+                              <lucide-icon name="calendar" [size]="12"></lucide-icon>
+                              {{ formatDateTime(withdrawal.timestamp) }}
+                            </p>
+                          </div>
+                          <div>
+                            <span [class]="'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap flex items-center gap-1 ' + 
+                                          (withdrawal.status === 'approved' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 
+                                           withdrawal.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' : 
+                                           'bg-red-500/20 text-red-400 border border-red-500/30')">
+                              <lucide-icon [name]="withdrawal.status === 'approved' ? 'check-circle' : withdrawal.status === 'pending' ? 'clock' : 'x-circle'" [size]="12"></lucide-icon>
+                              {{ formatWithdrawalStatus(withdrawal.status) }}
+                            </span>
+                          </div>
                         </div>
-                        <div>
-                          <span [class]="'px-2 py-1 rounded text-sm ' + 
-                                        (withdrawal.status === 'approved' ? 'bg-green-500/20 text-green-400' : 
-                                         withdrawal.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : 
-                                         'bg-red-500/20 text-red-400')">
-                            {{ formatWithdrawalStatus(withdrawal.status) }}
-                          </span>
+                        <div class="mt-3 text-sm text-gray-400 bg-black/30 p-3 rounded-md border border-yellow-500/10">
+                          <div class="grid grid-cols-2 gap-2">
+                            <div>
+                              <p class="text-xs text-yellow-300/70">Method</p>
+                              <p class="font-medium text-white flex items-center gap-1">
+                                <lucide-icon [name]="withdrawal.method.toLowerCase() === 'upi' ? 'credit-card' : 'credit-card'" [size]="12"></lucide-icon>
+                                {{ formatPaymentMethod(withdrawal.method) }}
+                              </p>
+                            </div>
+                            <div>
+                              <p class="text-xs text-yellow-300/70">Details</p>
+                              <p class="font-medium text-white truncate">{{ withdrawal.details }}</p>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div class="mt-2 text-sm text-gray-400">
-                        <p>Method: {{ formatPaymentMethod(withdrawal.method) }}</p>
-                        <p>Details: {{ withdrawal.details }}</p>
                       </div>
                     </div>
                   </div>

@@ -23,25 +23,33 @@ public class UserService {
     private final TransactionRepository transactionRepository;
     private final GameRepository gameRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
     
     // Constructor
     public UserService(UserRepository userRepository, TransactionRepository transactionRepository, 
-                        GameRepository gameRepository, PasswordEncoder passwordEncoder) {
+                        GameRepository gameRepository, PasswordEncoder passwordEncoder,
+                        EmailService emailService) {
         this.userRepository = userRepository;
         this.transactionRepository = transactionRepository;
         this.gameRepository = gameRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
     @Transactional
-    public User createUser(String username, String password) {
+    public User createUser(String username, String password, String email) {
         if (userRepository.existsByUsername(username)) {
             throw new RuntimeException("Username already exists");
+        }
+        
+        if (email != null && !email.isBlank() && userRepository.existsByEmail(email)) {
+            throw new RuntimeException("Email already registered");
         }
 
         User user = new User();
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(password));
+        user.setEmail(email);
         user.setBalance(new BigDecimal("0")); // Starting balance
         user.setRoles(new HashSet<>(java.util.Arrays.asList("ROLE_USER")));
         user.setCreatedAt(LocalDateTime.now());
@@ -143,5 +151,57 @@ public class UserService {
         roles.add("ROLE_USER");
         user.setRoles(roles);
         return userRepository.save(user);
+    }
+
+    @Transactional
+    public void initiatePasswordReset(String email) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            throw new RuntimeException("The entered email address is not linked to any user");
+        }
+        
+        User user = userOpt.get();
+        String resetToken = generateResetToken();
+        user.setResetToken(resetToken);
+        user.setResetTokenExpiry(LocalDateTime.now().plusHours(24));
+        userRepository.save(user);
+        
+        // Send reset email
+        emailService.sendPasswordResetEmail(user.getEmail(), resetToken);
+    }
+
+    public boolean validateResetToken(String token) {
+        Optional<User> userOpt = userRepository.findByResetToken(token);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            return user.getResetTokenExpiry() != null && 
+                   user.getResetTokenExpiry().isAfter(LocalDateTime.now());
+        }
+        return false;
+    }
+
+    @Transactional
+    public void resetPassword(String token, String newPassword) {
+        Optional<User> userOpt = userRepository.findByResetToken(token);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (user.getResetTokenExpiry() != null && 
+                user.getResetTokenExpiry().isAfter(LocalDateTime.now())) {
+                user.setPassword(passwordEncoder.encode(newPassword));
+                user.setResetToken(null);
+                user.setResetTokenExpiry(null);
+                userRepository.save(user);
+            } else {
+                throw new RuntimeException("Reset token has expired");
+            }
+        } else {
+            throw new RuntimeException("Invalid reset token");
+        }
+    }
+
+    private String generateResetToken() {
+        byte[] randomBytes = new byte[32];
+        new java.security.SecureRandom().nextBytes(randomBytes);
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
     }
 }

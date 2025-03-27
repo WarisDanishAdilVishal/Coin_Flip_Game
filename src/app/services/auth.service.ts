@@ -11,6 +11,7 @@ interface AuthResponse {
   balance: number;
   role: string;
   roles?: string[];  // Add roles array
+  email: string;  // Add email to AuthResponse
 }
 
 // Add a new interface for the user profile API response
@@ -21,6 +22,7 @@ interface UserProfileResponse {
   roles?: string[];  // Add roles array
   id?: number;
   createdAt?: string;
+  email: string;  // Add email field
 }
 
 @Injectable({
@@ -46,7 +48,8 @@ export class AuthService {
       username: response.username,
       balance: response.balance,
       role: response.role,
-      roles: response.roles || [response.role]  // Use roles array if available, otherwise create array from single role
+      roles: response.roles || [response.role],  // Use roles array if available, otherwise create array from single role
+      email: response.email  // Include email in user object
     };
     
     // Store token and user data
@@ -86,8 +89,8 @@ export class AuthService {
     return throwError(() => new Error(errorMessage));
   }
   
-  register(username: string, password: string): Observable<User> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/register`, { username, password })
+  register(username: string, password: string, email: string): Observable<User> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/register`, { username, password, email })
       .pipe(
         map(response => this.handleAuthResponse(response)),
         catchError(this.handleError)
@@ -171,9 +174,10 @@ export class AuthService {
             username: response.username,
             balance: response.balance,
             role: response.role,
-            roles: response.roles || [response.role], // Use roles array if available, otherwise create array from single role
-            id: response.id?.toString(), // Convert number to string
-            createdAt: response.createdAt ? new Date(response.createdAt) : undefined // Convert string to Date
+            roles: response.roles || [response.role],
+            id: response.id?.toString(),
+            createdAt: response.createdAt ? new Date(response.createdAt) : undefined,
+            email: response.email  // Include email in user object
           };
           
           // Update stored user data
@@ -190,6 +194,29 @@ export class AuthService {
           }
           return of(null);
         })
+      );
+  }
+
+  // Add methods for password reset functionality
+  
+  forgotPassword(email: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/password/forgot`, { email })
+      .pipe(
+        catchError(this.handleError)
+      );
+  }
+  
+  validateResetToken(token: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/password/validate?token=${token}`)
+      .pipe(
+        catchError(this.handleError)
+      );
+  }
+  
+  resetPassword(token: string, newPassword: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/password/reset`, { token, newPassword })
+      .pipe(
+        catchError(this.handleError)
       );
   }
 }

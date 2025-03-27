@@ -5,7 +5,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { importProvidersFrom } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app/app.routes';
-import { LucideAngularModule, Coins, Plus, X, History, Sparkles, AlertTriangle, LogOut, CreditCard, User, Lock, AlertCircle, UserPlus, Calendar, ArrowLeft, Clock, CheckCircle, ChevronRight, ArrowRight, BarChart, Users, DollarSign, XCircle, Search, Ban, UserCheck, ShieldAlert } from 'lucide-angular';
+import { LucideAngularModule, Coins, Plus, X, History, Sparkles, AlertTriangle, LogOut, CreditCard, User, Lock, AlertCircle, UserPlus, Calendar, ArrowLeft, Clock, CheckCircle, ChevronRight, ArrowRight, BarChart, Users, DollarSign, XCircle, Search, Ban, UserCheck, ShieldAlert, Mail, Send, Loader } from 'lucide-angular';
 import { authInterceptor } from './app/interceptors/auth.interceptor';
 import { loadingInterceptor } from './app/interceptors/loading.interceptor';
 
@@ -44,7 +44,10 @@ bootstrapApplication(AppComponent, {
         Search,
         Ban,
         UserCheck,
-        ShieldAlert
+        ShieldAlert,
+        Mail,
+        Send,
+        Loader
       })
     )
   ]

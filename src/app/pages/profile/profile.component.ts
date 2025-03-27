@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { LucideAngularModule, User, History, CreditCard, LogOut, ChevronRight, Calendar, ArrowRight, Award, TrendingUp, Percent } from 'lucide-angular';
+import { LucideAngularModule, User, History, CreditCard, LogOut, ChevronRight, Calendar, ArrowRight, Award, TrendingUp, Percent, CheckCircle, Clock, XCircle, AtSign, Smartphone, FileText, Send, Loader } from 'lucide-angular';
 import { HeaderComponent } from '../../components/header/header.component';
 import { ButtonComponent } from '../../components/button/button.component';
 import { AuthService } from '../../services/auth.service';
@@ -75,6 +75,10 @@ export class ProfileComponent implements OnInit {
   // Loading states
   isLoadingProfile: boolean = true;
   profileLoadError: boolean = false;
+  
+  // Add new properties for withdrawal history loading state
+  isLoadingWithdrawalHistory: boolean = false;
+  withdrawalHistoryLoadError: boolean = false;
   
   // Add data caching mechanism to prevent data loss between tab switches
   private cachedProfileData: {
@@ -489,6 +493,12 @@ export class ProfileComponent implements OnInit {
       this.loadGameHistory(1);
     }
     
+    // If switching to withdrawal tab, ensure withdrawal history is loaded
+    if (section === 'withdrawal') {
+      // Load withdrawal history
+      this.loadWithdrawalHistory();
+    }
+    
     // If switching back to profile, make sure data is still there
     if (section === 'profile' && previousSection !== 'profile') {
       console.log('Switched back to profile section - ensuring data is visible');
@@ -550,7 +560,31 @@ export class ProfileComponent implements OnInit {
   }
   
   submitWithdrawal() {
+    // Reset error and success states
+    this.withdrawalProcessing = false;
+    this.withdrawalSuccess = false;
+    this.withdrawalError = null;
+
     if (!this.withdrawalForm.valid) {
+      const amountControl = this.withdrawalForm.get('amount');
+      const detailsControl = this.withdrawalForm.get('details');
+      
+      if (amountControl?.errors?.['required']) {
+        this.withdrawalError = 'Please enter a withdrawal amount';
+        return;
+      }
+      
+      if (amountControl?.errors?.['min']) {
+        this.withdrawalError = 'Minimum withdrawal amount is ₹1000';
+        return;
+      }
+      
+      if (detailsControl?.errors?.['required']) {
+        this.withdrawalError = 'Please enter payment details';
+        return;
+      }
+      
+      this.withdrawalError = 'Please correct the errors in the form';
       return;
     }
 
@@ -560,27 +594,52 @@ export class ProfileComponent implements OnInit {
 
     // Validate amount
     if (amount < 1000) {
-      alert('Minimum withdrawal amount is ₹1000');
+      this.withdrawalError = 'Minimum withdrawal amount is ₹1000';
       return;
     }
 
     if (amount > this.userBalance) {
-      alert('Insufficient balance');
+      this.withdrawalError = 'Insufficient balance for this withdrawal';
       return;
     }
 
     // Validate payment method details
     if (!details) {
-      alert('Please enter payment details');
+      this.withdrawalError = 'Please enter payment details';
+      return;
+    }
+
+    // Additional validation based on payment method
+    if (method === 'UPI' && !details.includes('@')) {
+      this.withdrawalError = 'Please enter a valid UPI ID';
+      return;
+    }
+    
+    if (method === 'BANK' && details.length < 10) {
+      this.withdrawalError = 'Please enter complete bank account details';
+      return;
+    }
+    
+    if (method === 'PAYTM' && !/^\d{10}$/.test(details)) {
+      this.withdrawalError = 'Please enter a valid 10-digit Paytm number';
       return;
     }
 
     // Convert method to uppercase to match backend enum
     const methodUpperCase = method.toUpperCase();
+    
+    // Set processing state
+    this.withdrawalProcessing = true;
 
     this.withdrawalService.createWithdrawalRequest(amount, methodUpperCase, details).subscribe({
       next: (response) => {
-        alert('Withdrawal request submitted successfully');
+        // Store amount for success message
+        this.lastWithdrawalAmount = amount;
+        
+        // Show success message
+        this.withdrawalSuccess = true;
+        
+        // Add the new withdrawal to the history
         this.withdrawalHistory.unshift({
           id: response.id,
           amount: response.amount,
@@ -589,18 +648,48 @@ export class ProfileComponent implements OnInit {
           status: response.status.toLowerCase() as 'approved' | 'pending' | 'rejected',
           timestamp: response.timestamp
         });
+        
+        // Reset form
         this.withdrawalForm.reset();
+        
+        // Update balance
         this.userBalance -= amount;
+        
+        // Cache updated profile data
         this.cacheProfileData();
+        
+        // Reset processing state
+        this.withdrawalProcessing = false;
       },
       error: (error) => {
         console.error('Error submitting withdrawal:', error);
-        alert(error.error?.message || 'Failed to submit withdrawal request');
+        
+        // Show error message from the server or a default message
+        if (error.message) {
+          this.withdrawalError = error.message;
+          
+          // Check for daily limit error specifically
+          if (this.withdrawalError && this.withdrawalError.includes('one withdrawal request per day')) {
+            // Find the pending withdrawal from history to show additional context
+            const pendingWithdrawal = this.withdrawalHistory.find(w => w.status === 'pending');
+            if (pendingWithdrawal && pendingWithdrawal.amount) {
+              this.withdrawalError = `You can only make one withdrawal request per day. Your current request for ₹${pendingWithdrawal.amount} is still pending.`;
+            }
+          }
+        } else {
+          this.withdrawalError = 'Failed to submit withdrawal request. Please try again later.';
+        }
+        
+        // Reset processing state
+        this.withdrawalProcessing = false;
       }
     });
   }
   
   loadWithdrawalHistory(): void {
+    this.isLoadingWithdrawalHistory = true;
+    this.withdrawalHistoryLoadError = false;
+    
     this.withdrawalService.getWithdrawalHistory().subscribe({
       next: (history) => {
         this.withdrawalHistory = history.map(withdrawal => ({
@@ -611,9 +700,12 @@ export class ProfileComponent implements OnInit {
           status: withdrawal.status.toLowerCase() as 'approved' | 'pending' | 'rejected',
           timestamp: withdrawal.timestamp
         }));
+        this.isLoadingWithdrawalHistory = false;
       },
       error: (error) => {
         console.error('Error loading withdrawal history:', error);
+        this.withdrawalHistoryLoadError = true;
+        this.isLoadingWithdrawalHistory = false;
       }
     });
   }
@@ -794,5 +886,11 @@ export class ProfileComponent implements OnInit {
         console.error('Error during direct DOM update:', error);
       }
     }, 100); // Short delay to let Angular try first
+  }
+  
+  // Helper method to format numbers with thousands separators
+  toLocalizedString(num: number | null | undefined): string {
+    const value = num ?? 0;
+    return value.toLocaleString();
   }
 }

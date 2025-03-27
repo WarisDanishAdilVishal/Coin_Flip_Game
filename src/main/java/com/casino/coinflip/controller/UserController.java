@@ -37,14 +37,19 @@ public class UserController {
         
         String primaryRole = user.getRoles().stream().findFirst().orElse("ROLE_USER");
         
-        // Use the simple constructor for basic profile information
+        // Use the constructor that includes email
         UserProfileResponse response = new UserProfileResponse(
             user.getUsername(),
             user.getBalance(),
             primaryRole,
             new ArrayList<>(user.getRoles()),
             user.getId(),
-            user.getCreatedAt()
+            user.getCreatedAt(),
+            user.getEmail(),  // Include email
+            0, 0, 0,  // Default game stats
+            BigDecimal.ZERO, BigDecimal.ZERO,  // Default earnings stats
+            user.getStatus().toString(),
+            user.getLastActive()
         );
         
         return ResponseEntity.ok(response);
@@ -103,7 +108,7 @@ public class UserController {
                 new ArrayList<>(user.getRoles()),
                 user.getId(),
                 user.getCreatedAt(),
-                user.getUsername() + "@example.com", // Placeholder email
+                user.getEmail(),  // Use actual user email
                 totalGames,
                 gamesWon,
                 gamesLost,

@@ -48,7 +48,7 @@ public class AdminController {
         this.transactionService = transactionService;
     }
 
-    @GetMapping({"/admin/stats", "/api/admin/stats"})
+    @GetMapping({"/admin/stats"})
     public ResponseEntity<?> getGameStats() {
         List<GameRepository.GameStats> stats = gameRepository.getGameStatistics();
         List<Map<String, Object>> formattedStats = stats.stream().map(stat -> {
@@ -64,7 +64,7 @@ public class AdminController {
         return ResponseEntity.ok(formattedStats);
     }
 
-    @GetMapping({"/admin/users", "/api/admin/users", "/api/users"})
+    @GetMapping({"/admin/users"})
     public ResponseEntity<?> getAllUsers() {
         try {
             logger.info("Fetching all users with stats");
@@ -78,7 +78,7 @@ public class AdminController {
         }
     }
     
-    @GetMapping({"/admin/transactions", "/api/admin/transactions"})
+    @GetMapping({"/admin/transactions"})
     public ResponseEntity<?> getAllTransactions() {
         try {
             logger.info("Fetching all transactions");
@@ -95,7 +95,7 @@ public class AdminController {
         }
     }
     
-    @GetMapping({"/admin/deposits", "/api/admin/deposits"})
+    @GetMapping({"/admin/deposits"})
     public ResponseEntity<?> getAllDeposits() {
         try {
             logger.info("Fetching all deposit transactions");
@@ -112,7 +112,7 @@ public class AdminController {
         }
     }
     
-    @GetMapping({"/admin/withdrawals", "/api/admin/withdrawals"})
+    @GetMapping({"/admin/withdrawals"})
     public ResponseEntity<?> getAllWithdrawals(@RequestParam(required = false) WithdrawalRequest.WithdrawalStatus status) {
         try {
             logger.info("Fetching withdrawal requests with status: {}", status);
@@ -126,7 +126,7 @@ public class AdminController {
         }
     }
 
-    @PutMapping({"/admin/users/{userId}/status", "/api/admin/users/{userId}/status", "/api/users/{userId}/status"})
+    @PutMapping({"/admin/users/{userId}/status"})
     public ResponseEntity<?> updateUserStatus(
             @PathVariable Long userId,
             @RequestParam User.UserStatus status) {
@@ -142,7 +142,7 @@ public class AdminController {
         }
     }
 
-    @PostMapping({"/admin/withdrawals/{requestId}/approve", "/api/admin/withdrawals/{requestId}/approve"})
+    @PostMapping({"/admin/withdrawals/{requestId}/approve"})
     public ResponseEntity<?> approveWithdrawal(@PathVariable Long requestId) {
         try {
             logger.info("Approving withdrawal request: {}", requestId);
@@ -156,7 +156,7 @@ public class AdminController {
         }
     }
 
-    @PostMapping({"/admin/withdrawals/{requestId}/reject", "/api/admin/withdrawals/{requestId}/reject"})
+    @PostMapping({"/admin/withdrawals/{requestId}/reject"})
     public ResponseEntity<?> rejectWithdrawal(@PathVariable Long requestId) {
         try {
             logger.info("Rejecting withdrawal request: {}", requestId);
@@ -170,7 +170,7 @@ public class AdminController {
         }
     }
 
-    @PutMapping({"/admin/users/{userId}/roles", "/api/admin/users/{userId}/roles", "/api/users/{userId}/roles"})
+    @PutMapping({"/admin/users/{userId}/roles"})
     public ResponseEntity<?> updateUserRole(
             @PathVariable Long userId,
             @RequestParam String role,

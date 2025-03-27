@@ -23,6 +23,7 @@ export class SignupComponent implements OnInit{
   username: string = '';
   password: string = '';
   confirmPassword: string = '';
+  email: string = '';
   errorMessage: string = '';
   isLoading: boolean = false;
   
@@ -35,7 +36,27 @@ export class SignupComponent implements OnInit{
   
   
   signup(): void {
-    if (!this.username.trim() || !this.password.trim() || !this.confirmPassword.trim() || this.isLoading) {
+    // Reset error message
+    this.errorMessage = '';
+
+    // Validate required fields
+    if (!this.username.trim()) {
+      this.errorMessage = 'Username is required';
+      return;
+    }
+
+    if (!this.email.trim()) {
+      this.errorMessage = 'Email address is required';
+      return;
+    }
+
+    if (!this.validateEmail(this.email)) {
+      this.errorMessage = 'Please enter a valid email address';
+      return;
+    }
+
+    if (!this.password.trim() || !this.confirmPassword.trim()) {
+      this.errorMessage = 'Password is required';
       return;
     }
     
@@ -50,9 +71,8 @@ export class SignupComponent implements OnInit{
     }
     
     this.isLoading = true;
-    this.errorMessage = '';
     
-    this.authService.register(this.username, this.password).subscribe({
+    this.authService.register(this.username, this.password, this.email).subscribe({
       next: () => {
         this.router.navigate(['/game']);
       },
@@ -64,5 +84,10 @@ export class SignupComponent implements OnInit{
         this.isLoading = false;
       }
     });
+  }
+  
+  private validateEmail(email: string): boolean {
+    const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return regex.test(email);
   }
 }

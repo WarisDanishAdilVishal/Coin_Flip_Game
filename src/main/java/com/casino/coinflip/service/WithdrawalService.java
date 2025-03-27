@@ -29,17 +29,58 @@ public class WithdrawalService {
     @Transactional
     public WithdrawalRequest createWithdrawalRequest(User user, BigDecimal amount, 
             WithdrawalRequest.PaymentMethod method, String details) {
+        // Validate user
+        if (user == null) {
+            throw new RuntimeException("User not found");
+        }
+            
+        // Validate amount
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("Withdrawal amount must be greater than zero");
+        }
+        
+        // Check minimum withdrawal amount (₹1000)
+        if (amount.compareTo(new BigDecimal("1000")) < 0) {
+            throw new RuntimeException("Minimum withdrawal amount is ₹1000");
+        }
+        
+        // Check if user account is active
+        if (user.getStatus() != null && user.getStatus() != User.UserStatus.ACTIVE) {
+            throw new RuntimeException("Your account is not active. Please contact support");
+        }
+        
+        // Check for sufficient balance
         if (user.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("Insufficient balance");
+            throw new RuntimeException("Insufficient balance for this withdrawal");
         }
 
         // Check if user has already made a withdrawal request today
         LocalDateTime today = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
         List<WithdrawalRequest> todayRequests = withdrawalRequestRepository.findByUserIdAndTimestampGreaterThanEqual(user.getId(), today);
         if (!todayRequests.isEmpty()) {
-            throw new RuntimeException("You can only make one withdrawal request per day");
+            WithdrawalRequest existingRequest = todayRequests.get(0);
+            String status = existingRequest.getStatus().toString().toLowerCase();
+            throw new RuntimeException("You can only make one withdrawal request per day. Your current " + 
+                status + " request for ₹" + existingRequest.getAmount() + " was submitted " +
+                "on " + existingRequest.getTimestamp().format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, HH:mm")));
         }
-
+        
+        // Validate payment details based on method
+        if (details == null || details.trim().isEmpty()) {
+            throw new RuntimeException("Payment details are required");
+        }
+        
+        // Note: The PaymentMethod enum in WithdrawalRequest only has UPI as a valid value
+        // Other payment methods might be handled in the frontend but not properly defined in the backend
+        if (method == WithdrawalRequest.PaymentMethod.UPI && !details.contains("@")) {
+            throw new RuntimeException("Invalid UPI ID format");
+        }
+        
+        // Additional validation for payment details length regardless of method
+        if (details.length() < 5) {
+            throw new RuntimeException("Payment details are too short - please provide complete information");
+        }
+        
         // Hold the balance by subtracting it from user's available balance
         userService.updateBalance(user, amount.negate());
 

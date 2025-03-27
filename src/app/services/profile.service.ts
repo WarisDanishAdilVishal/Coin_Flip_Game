@@ -196,6 +196,29 @@ export class ProfileService {
     return result;
   }
   
+  // Helper method to convert any value to a number
+  private convertToNumber(value: any): number {
+    if (value === undefined || value === null) {
+      return 0;
+    }
+    
+    const converted = Number(value);
+    if (!isNaN(converted)) {
+      return converted;
+    }
+    
+    // Try parsing as float if it's a string
+    if (typeof value === 'string') {
+      const parsed = parseFloat(value);
+      if (!isNaN(parsed)) {
+        return parsed;
+      }
+    }
+    
+    // Return 0 as fallback
+    return 0;
+  }
+
   // Create a fallback user with default values
   private getFallbackUser(): User {
     const currentUser = this.authService.getCurrentUser();
@@ -215,98 +238,21 @@ export class ProfileService {
       gamesLost: 0,
       lifetimeEarnings: 0,
       highestWin: 0,
-      status: 'ACTIVE'
+      status: 'ACTIVE',
+      email: 'guest@example.com'  // Add default email
     };
   }
 
   private mapProfileResponseToUser(response: UserProfileResponse): User {
     console.log('mapProfileResponseToUser called with response:', JSON.stringify(response, null, 2));
     
-    // Check for missing or null fields
-    if (!response.totalGames && response.totalGames !== 0) {
-      console.warn('totalGames is missing or null in response!');
-    }
-    if (!response.gamesWon && response.gamesWon !== 0) {
-      console.warn('gamesWon is missing or null in response!');
-    }
-    if (!response.gamesLost && response.gamesLost !== 0) {
-      console.warn('gamesLost is missing or null in response!');
-    }
-    if (!response.lifetimeEarnings && response.lifetimeEarnings !== 0) {
-      console.warn('lifetimeEarnings is missing or null in response!');
-    }
-    
-    // SUPER AGGRESSIVE TYPE CONVERSION
-    // Try multiple approaches to ensure we get valid numbers
-    
-    let totalGames = 0;
-    if (response.totalGames !== undefined && response.totalGames !== null) {
-      const converted = Number(response.totalGames);
-      if (!isNaN(converted)) {
-        totalGames = converted;
-      } else {
-        totalGames = parseInt(String(response.totalGames), 10) || 0;
-      }
-    }
-    
-    let gamesWon = 0;
-    if (response.gamesWon !== undefined && response.gamesWon !== null) {
-      const converted = Number(response.gamesWon);
-      if (!isNaN(converted)) {
-        gamesWon = converted;
-      } else {
-        gamesWon = parseInt(String(response.gamesWon), 10) || 0;
-      }
-    }
-    
-    let gamesLost = 0;
-    if (response.gamesLost !== undefined && response.gamesLost !== null) {
-      const converted = Number(response.gamesLost);
-      if (!isNaN(converted)) {
-        gamesLost = converted;
-      } else {
-        gamesLost = parseInt(String(response.gamesLost), 10) || 0;
-      }
-    }
-    
-    let lifetimeEarnings = 0;
-    if (response.lifetimeEarnings !== undefined && response.lifetimeEarnings !== null) {
-      const converted = Number(response.lifetimeEarnings);
-      if (!isNaN(converted)) {
-        lifetimeEarnings = converted;
-      } else {
-        lifetimeEarnings = parseFloat(String(response.lifetimeEarnings)) || 0;
-      }
-    }
-    
-    let highestWin = 0;
-    if (response.highestWin !== undefined && response.highestWin !== null) {
-      const converted = Number(response.highestWin);
-      if (!isNaN(converted)) {
-        highestWin = converted;
-      } else {
-        highestWin = parseFloat(String(response.highestWin)) || 0;
-      }
-    }
-    
-    // Force balance to be a number
-    let balance = 0;
-    if (response.balance !== undefined && response.balance !== null) {
-      const converted = Number(response.balance);
-      if (!isNaN(converted)) {
-        balance = converted;
-      } else {
-        balance = parseFloat(String(response.balance)) || 0;
-      }
-    }
-    
-    console.log('Values after SUPER AGGRESSIVE conversion:');
-    console.log('- totalGames:', totalGames, `(${typeof totalGames})`);
-    console.log('- gamesWon:', gamesWon, `(${typeof gamesWon})`);
-    console.log('- gamesLost:', gamesLost, `(${typeof gamesLost})`);
-    console.log('- lifetimeEarnings:', lifetimeEarnings, `(${typeof lifetimeEarnings})`);
-    console.log('- highestWin:', highestWin, `(${typeof highestWin})`);
-    console.log('- balance:', balance, `(${typeof balance})`);
+    // Extract and convert values, ensuring they are numbers
+    const balance = this.convertToNumber(response.balance);
+    const totalGames = this.convertToNumber(response.totalGames);
+    const gamesWon = this.convertToNumber(response.gamesWon);
+    const gamesLost = this.convertToNumber(response.gamesLost);
+    const lifetimeEarnings = this.convertToNumber(response.lifetimeEarnings);
+    const highestWin = this.convertToNumber(response.highestWin);
     
     const mappedUser: User = {
       id: response.id?.toString(),
@@ -314,7 +260,7 @@ export class ProfileService {
       balance: balance,
       role: response.role || 'USER',
       createdAt: response.createdAt ? new Date(response.createdAt) : new Date(),
-      email: response.email || '',
+      email: response.email || 'unknown@example.com',  // Add email with fallback
       totalGames: totalGames,
       gamesWon: gamesWon,
       gamesLost: gamesLost,
@@ -399,13 +345,21 @@ export class ProfileService {
         // Extract user data from response
         const userData = response.user || response;
         
-        // Map to User model
+        // Map to User model with all required fields
         const user: User = {
           username: userData.username,
-          balance: userData.balance,
-          role: userData.role,
+          balance: this.convertToNumber(userData.balance),
+          role: userData.role || 'USER',
           id: userData.id?.toString(),
-          createdAt: userData.createdAt ? new Date(userData.createdAt) : undefined
+          createdAt: userData.createdAt ? new Date(userData.createdAt) : new Date(),
+          email: userData.email || 'unknown@example.com',
+          totalGames: this.convertToNumber(userData.totalGames),
+          gamesWon: this.convertToNumber(userData.gamesWon),
+          gamesLost: this.convertToNumber(userData.gamesLost),
+          lifetimeEarnings: this.convertToNumber(userData.lifetimeEarnings),
+          highestWin: this.convertToNumber(userData.highestWin),
+          status: userData.status || 'ACTIVE',
+          lastActive: userData.lastActive ? new Date(userData.lastActive) : new Date()
         };
         
         // Update stored user data

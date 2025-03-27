@@ -6,9 +6,9 @@ export interface User {
   createdAt?: Date;
   role?: string;
   roles?: string[];  // Array of roles
+  email: string;  // Make email required
   
   // Game statistics fields (explicitly defined as numbers)
-  email?: string;
   totalGames?: number;
   gamesWon?: number;
   gamesLost?: number;

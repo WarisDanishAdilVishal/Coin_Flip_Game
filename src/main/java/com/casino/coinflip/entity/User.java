@@ -18,6 +18,15 @@ public class User {
 
     @Column(nullable = false)
     private String password;
+    
+    @Column(unique = true)
+    private String email;
+    
+    @Column(name = "reset_token")
+    private String resetToken;
+    
+    @Column(name = "reset_token_expiry")
+    private LocalDateTime resetTokenExpiry;
 
     @Column(nullable = false)
     private BigDecimal balance = BigDecimal.ZERO;
@@ -53,6 +62,18 @@ public class User {
     public String getPassword() {
         return password;
     }
+    
+    public String getEmail() {
+        return email;
+    }
+    
+    public String getResetToken() {
+        return resetToken;
+    }
+    
+    public LocalDateTime getResetTokenExpiry() {
+        return resetTokenExpiry;
+    }
 
     public BigDecimal getBalance() {
         return balance;
@@ -85,6 +106,18 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+    
+    public void setEmail(String email) {
+        this.email = email;
+    }
+    
+    public void setResetToken(String resetToken) {
+        this.resetToken = resetToken;
+    }
+    
+    public void setResetTokenExpiry(LocalDateTime resetTokenExpiry) {
+        this.resetTokenExpiry = resetTokenExpiry;
     }
 
     public void setBalance(BigDecimal balance) {
